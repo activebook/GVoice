@@ -1,6 +1,6 @@
 # Specific to this project
-./kokorovoice/*.*
 design.md
+config.yaml
 
 # Common Practice
 .DS_Store
