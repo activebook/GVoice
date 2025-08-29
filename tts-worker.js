@@ -1,38 +1,42 @@
+const { GoogleGenAI } = require("@google/genai");
+const { ProxyAgent, setGlobalDispatcher } = require('undici');
 const { parentPort } = require('worker_threads');
 const path = require('path');
-const { generateFilename } = require('./utils');
-const STATUS = require('./status');
-const { KokoroTTS } = require("kokoro-js");
-const { getAndSetProxyEnvironment } = require("./sys_proxy");
+const fs = require('fs');
+const wav = require('wav');
+const { generateFilename } = require('./utils.js');
+const { getDefaultSettings } = require('./config-reader.js');
+const STATUS = require('./status.js');
 
-// ***First set the proxy, otherwise kokoro-js won't work***
-getAndSetProxyEnvironment();
+// Conditionally set proxy based on environment variables
+const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
 
-/**
- * modules (like those built with N-API) are typically expected to be loaded and registered a single time per process. 
- * When you load the module in a worker thread for the second time, 
- * the module’s internal state (or its static initialization) may already be set, 
- * and the module isn’t re-initialized, leading to the “did not self-register” error.
- */
-let ttsModel = null;
+if (proxyUrl) {
+  const proxyAgent = new ProxyAgent(proxyUrl);
+  setGlobalDispatcher(proxyAgent);
+  console.log(`Using proxy from environment variable: ${proxyUrl}`);
+} else {
+  console.log('No proxy environment variable found. Proceeding without proxy.');
+}
 
-// Initialize the model only once
-async function initModel() {
-    if (!ttsModel) {
-        // Load just once
-        //console.log('Loading TTS model...');
-        // Use this to properly resolve model paths
-        // Set before initializing kokoro-tts
-        // KokoroTTS use huggingface, so you cannot use app.asar to package
-        // It won't find files under app.asar which is not a folder
-        // So set package.json build asar:false
-        
-        // "fp32"|"fp16"|"q8"|"q4"|"q4f16"
-        ttsModel = await KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-ONNX', { dtype: 'q8' });
-
-        //console.log('TTS model loaded successfully!');
-    }
-    return ttsModel;
+async function saveWaveFile(
+  filename,
+  pcmData,
+  channels = 1,
+  rate = 24000,
+  sampleWidth = 2,
+) {
+  return new Promise((resolve, reject) => {
+    const writer = new wav.FileWriter(filename, {
+      channels,
+      sampleRate: rate,
+      bitDepth: sampleWidth * 8,
+    });
+    writer.on('finish', resolve);
+    writer.on('error', reject);
+    writer.write(pcmData);
+    writer.end();
+  });
 }
 
 async function generateSpeech(text, voice, dir, prefix) {
@@ -40,29 +44,50 @@ async function generateSpeech(text, voice, dir, prefix) {
         const filename = generateFilename(prefix);
         const outputPath = path.join(dir, filename);
 
-        const tts = await initModel();
-        //tts.list_voices();
-        const audio = await tts.generate(text, {
-            // Use `tts.list_voices()` to list all available voices
-            voice: voice,
+        // Get API key from config
+        const defaultSettings = getDefaultSettings();
+        const apiKey = defaultSettings?.apiKey;
+
+        if (!apiKey || apiKey === 'your_google_ai_api_key_here') {
+            throw new Error('Google AI API key not configured. Please set your API key in config.yaml');
+        }
+
+        const ai = new GoogleGenAI({ apiKey: apiKey });
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash-preview-tts",
+            contents: [{ parts: [{ text: `Generate this audio in a formal, clear, and objective news-reporting style: ${text}` }] }],
+            config: {
+                responseModalities: ['AUDIO'],
+                speechConfig: {
+                    voiceConfig: {
+                        prebuiltVoiceConfig: { voiceName: voice },
+                    },
+                },
+            },
         });
-        audio.save(outputPath);
-        //console.log(`Generated speech saved to ${outputPath}`);
+
+        const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (!data) {
+            throw new Error('No audio data received from Google AI');
+        }
+
+        const audioBuffer = Buffer.from(data, 'base64');
+        await saveWaveFile(outputPath, audioBuffer);
+
+        console.log(`Generated speech saved to ${outputPath}`);
 
         // Send result back to main thread
         const progress = {
-            status: STATUS.KOKORO_SERVICE_STATUS_DONE,
+            status: STATUS.TTS_SERVICE_STATUS_DONE,
             message: outputPath
         };
         if (parentPort) parentPort.postMessage(progress);
 
-        // Here we'd normally generate the actual audio file
-        // For now, we'll return the path where it would be saved
         return outputPath;
     } catch (error) {
         const progress = {
-            status: STATUS.KOKORO_SERVICE_STATUS_ERROR,
-            message: `Error generating speech:, ${error}`
+            status: STATUS.TTS_SERVICE_STATUS_ERROR,
+            message: `Error generating speech: ${error.message}`
         };
         if (parentPort) parentPort.postMessage(progress);
         console.error('TTS job failed:', progress.message);
@@ -71,30 +96,29 @@ async function generateSpeech(text, voice, dir, prefix) {
 
 parentPort.on('message', async (data) => {
     let { text, voice, dir, prefix } = data;
+
     if (text.trim() === "") {
         const progress = {
-            status: STATUS.KOKORO_SERVICE_STATUS_ERROR,
+            status: STATUS.TTS_SERVICE_STATUS_ERROR,
             message: "No text provided to TTS"
         };
         parentPort.postMessage(progress);
         return;
     }
+
     if (!voice || (voice && voice.trim() === "")) {
-        voice = 'af_heart';
+        const defaultSettings = getDefaultSettings();
+        voice = defaultSettings?.defaultVoice || 'Kore';
     }
+
     if (!prefix || (prefix && prefix.trim() === "")) {
         prefix = 'voice';
     }
 
-    //console.log('Received TTS request:', text)
-
-    // Run the calculation and send completion
-    //const result = await generateSpeech(text);
+    console.log('Received TTS request:', text);
 
     // Don't need to await
     generateSpeech(text, voice, dir, prefix);
-
-    //console.log('TTS job done saved path:', result)
 });
 
 

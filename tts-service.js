@@ -1,13 +1,11 @@
 // tts-service.js
 /**
- * TTS Service
- * If tts cannot run correctly, first download onnx file from huggingface and put it in the project folder
- * https://huggingface.co/onnx-community/Kokoro-82M-ONNX/tree/main/onnx
- * folder path: ./node_modules/@huggingface/transformers/.cache/onnx-community/Kokoro-82M-ONNX/onnx/
+ * TTS Service using Google GenAI
  */
 const { ipcMain, shell } = require('electron');
 const { Worker } = require('worker_threads');
-const { loadConfig, getAppUserDataDir } = require('./utils');
+const { getVoices, getDefaultSettings } = require('./config-reader');
+const { getAppUserDataDir } = require('./utils');
 const path = require('path');
 
 // TTS worker instance, keep only one instance
@@ -17,9 +15,7 @@ let ttsWorker = null;
 function initTTSWorker() {
     if (!ttsWorker) {
         const workerPath = path.join(__dirname, 'tts-worker.js');
-        ttsWorker = new Worker(workerPath, {
-            type: 'module' // Specify ES module type
-        });
+        ttsWorker = new Worker(workerPath);
 
         // Log any errors
         ttsWorker.on('error', (err) => {
@@ -32,21 +28,26 @@ function initTTSWorker() {
 
 async function loadVoices(sender) {
     return new Promise(async (resolve, reject) => {
-        const config = await loadConfig();
-        const voices = config.tts.voices.map(voice => ({
-            id: voice,
-            name: voice
+        const voices = getVoices().map(voice => ({
+            id: voice.name,
+            name: voice.name,
+            description: voice.description
         }));
         //console.log(voices);
-        const prefix = config.tts.prefix;
-        sender.send('available-voices-retrieved', voices, prefix);
+        const defaultSettings = getDefaultSettings();
+        const prefix = defaultSettings?.defaultVoice || 'voice';
+
+        // Check if sender is still valid before sending
+        if (!sender.isDestroyed()) {
+            sender.send('available-voices-retrieved', voices, prefix);
+        }
         resolve(voices);
     });
 }
 
 function setupTTSHandlers() {
     ipcMain.handle('convert-text-to-speech', async (event, text, voice, filePrefix) => {
-        
+
         /**
          * due to Node.js module scoping in worker threads! 
          * Workers load their own separate instances of modules with separate memory spaces.
@@ -56,10 +57,8 @@ function setupTTSHandlers() {
 
         // Reuse the worker thread if it exists
         const worker = initTTSWorker();
-        
+
         return new Promise((resolve, reject) => {
-            // Create worker with ES modules
-            const worker = initTTSWorker();
             // Send text to worker to process
             worker.postMessage({
                 text: text,
@@ -67,14 +66,20 @@ function setupTTSHandlers() {
                 dir: appUserDataDir,
                 prefix: filePrefix
             });
+
             // Handle worker response
-            worker.on('message', (progress) => {
-                // Forward progress to renderer
-                // Pass the webContents to send progress updates
-                const sender = event.sender
-                sender.send('tts-progress', progress);
+            const messageHandler = (progress) => {
+                // Check if sender is still valid before sending
+                if (!event.sender.isDestroyed()) {
+                    // Forward progress to renderer
+                    event.sender.send('tts-progress', progress);
+                }
+                // Remove the listener after handling the message
+                worker.removeListener('message', messageHandler);
                 resolve(progress.message);
-            });
+            };
+
+            worker.on('message', messageHandler);
         });
     });
 
@@ -84,9 +89,44 @@ function setupTTSHandlers() {
     });
 
     // Add handler for opening file location
-    ipcMain.on('open-file-location', (event, filePath) => {
-        if (filePath) {
-            shell.showItemInFolder(filePath);
+    ipcMain.on('open-file-location', async (event, filePath) => {
+        const folderPath = getAppUserDataDir();
+        shell.openPath(folderPath);
+    });
+
+    // Add handler for getting audio files list
+    ipcMain.handle('get-audio-files-list', async () => {
+        const fs = require('fs/promises');
+        const path = require('path');
+        const { getAppUserDataDir } = require('./utils');
+
+        try {
+            const appUserDataDir = getAppUserDataDir();
+            const files = await fs.readdir(appUserDataDir);
+
+            // Filter for .wav files and get their stats
+            const audioFiles = [];
+            for (const file of files) {
+                if (file.endsWith('.wav')) {
+                    const filePath = path.join(appUserDataDir, file);
+                    const stats = await fs.stat(filePath);
+                    audioFiles.push({
+                        name: file,
+                        path: filePath,
+                        size: stats.size,
+                        created: stats.birthtime,
+                        modified: stats.mtime
+                    });
+                }
+            }
+
+            // Sort by creation date (newest first)
+            audioFiles.sort((a, b) => b.created - a.created);
+
+            return audioFiles;
+        } catch (error) {
+            console.error('Error reading audio files:', error);
+            return [];
         }
     });
 }

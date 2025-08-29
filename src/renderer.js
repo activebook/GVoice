@@ -21,7 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const convertBtn = document.getElementById('convert-btn');
     const audioPlayer = document.getElementById('audio-player');
     const openFileBtn = document.getElementById('open-file-btn');
+    const voiceListBtn = document.getElementById('voice-list-btn');
     const voiceSelect = document.getElementById('voice-select');
+
+    // Voice list dropdown elements
+    const voiceListDropdown = document.getElementById('voice-list-dropdown');
+    const voiceListContainer = document.getElementById('voice-list-container');
+    const voiceListLoading = document.getElementById('voice-list-loading');
+    const voiceListEmpty = document.getElementById('voice-list-empty');
+    const voiceListItems = document.getElementById('voice-list-items');
 
     // Status functionality
     function showStatus(type, message) {
@@ -127,7 +135,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Listen for conversion progress updates
     const cleanup = window.api.onConversionProgress((progress) => {
-        if (progress.status === window.api.STATUS.KOKORO_SERVICE_STATUS_DONE) {
+        if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_DONE) {
             // Update audio player with the new file
             const audioPath = progress.message
             audioPlayer.src = audioPath
@@ -139,9 +147,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Show success message
             showStatus(STATUS.STATUS_TYPE_SUCESS, 'Conversion completed successfully!');
-        } else if (progress.status === window.api.STATUS.KOKORO_SERVICE_STATUS_START) {
+
+            // Refresh voice list if dropdown is currently visible
+            const isDropdownVisible = !voiceListDropdown.classList.contains('invisible');
+            if (isDropdownVisible) {
+                loadAudioFiles();
+            }
+        } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_START) {
             showStatus(STATUS.STATUS_TYPE_INFO, 'Starting conversion...');
-        } else if (progress.status === window.api.STATUS.KOKORO_SERVICE_STATUS_ERROR) {
+        } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_ERROR) {
             showStatus(STATUS.STATUS_TYPE_ERROR, `Error: ${progress.message}`);
         }
     })
@@ -183,32 +197,177 @@ document.addEventListener('DOMContentLoaded', () => {
      * Open file location click event
      */
     openFileBtn.addEventListener('click', () => {
-        const audioSrc = audioPlayer.src;
-        if (audioSrc) {
-            // For file:// protocol URLs
-            const filePath = decodeURI(audioSrc).replace('file://', '');
-            window.api.openFileLocation(filePath);
-        } else {
-            showStatus(STATUS.STATUS_TYPE_INFO, 'No audio file to open.');
-        }
+        // Always open the audio files folder
+        window.api.openFileLocation();
     });
 
     // Function to update button state based on audio src
     function updateButtonState() {
-        if (!audioPlayer.src || audioPlayer.src === '' || audioPlayer.src === 'about:blank') {
-            // Disable with Tailwind classes
-            openFileBtn.classList.add('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-            openFileBtn.setAttribute('disabled', 'true');
-        } else {
-            // Enable with Tailwind classes
-            openFileBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
-            openFileBtn.removeAttribute('disabled');
-        }4
+        // Always keep the button enabled
+        openFileBtn.classList.remove('opacity-50', 'cursor-not-allowed', 'pointer-events-none');
+        openFileBtn.removeAttribute('disabled');
     }
     // Update when audio source changes
     audioPlayer.addEventListener('loadedmetadata', updateButtonState);
     audioPlayer.addEventListener('error', updateButtonState);
     updateButtonState();
+
+    /**
+     * Voice List functionality
+     */
+    // Function to format file size
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    // Function to format date
+    function formatDate(date) {
+        return new Date(date).toLocaleString();
+    }
+
+    // Function to load and display audio files
+    async function loadAudioFiles() {
+        try {
+            // Show loading state
+            voiceListLoading.classList.remove('hidden');
+            voiceListEmpty.classList.add('hidden');
+            voiceListItems.classList.add('hidden');
+            voiceListItems.innerHTML = '';
+
+            const audioFiles = await window.api.getAudioFilesList();
+
+            // Hide loading
+            voiceListLoading.classList.add('hidden');
+
+            if (audioFiles.length === 0) {
+                voiceListEmpty.classList.remove('hidden');
+                return;
+            }
+
+            // Create file items
+            audioFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'voice-list-item';
+                fileItem.innerHTML = `
+                    <div class="file-container" style="text-align: center; width: 100%; padding: 8px 16px; box-sizing: border-box;">
+                        <div class="file-name" title="${file.name}" style="text-align: center !important; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">
+                            ${file.name}
+                        </div>
+                    </div>
+                `;
+
+                // Add click event to play the audio
+                fileItem.addEventListener('click', () => {
+                    audioPlayer.src = `file://${file.path}`;
+                    audioPlayer.style.display = 'block';
+                    toggleVoiceListDropdown(); // Close the dropdown
+                    showStatus(STATUS.STATUS_TYPE_INFO, `Playing: ${file.name}`);
+                });
+
+                voiceListItems.appendChild(fileItem);
+            });
+
+            voiceListItems.classList.remove('hidden');
+        } catch (error) {
+            console.error('Error loading audio files:', error);
+            voiceListLoading.classList.add('hidden');
+            voiceListEmpty.classList.remove('hidden');
+            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to load audio files');
+        }
+    }
+
+    // Function to toggle voice list dropdown
+    function toggleVoiceListDropdown() {
+        const isVisible = !voiceListDropdown.classList.contains('invisible');
+        if (isVisible) {
+            // Hide dropdown
+            hideVoiceListDropdown();
+        } else {
+            // Show dropdown and load files
+            showVoiceListDropdown();
+        }
+    }
+
+    // Function to show voice list dropdown
+    function showVoiceListDropdown() {
+        // Position above the voice list button
+        const buttonRect = voiceListBtn.getBoundingClientRect();
+        const dropdownWidth = 400; // Smaller size
+        const dropdownHeight = 300; // Smaller height
+
+        // Position above the button, centered horizontally
+        let left = buttonRect.left + (buttonRect.width / 2) - (dropdownWidth / 2);
+        let top = buttonRect.top - dropdownHeight - 10; // 10px above button
+
+        // Ensure dropdown doesn't go off-screen horizontally
+        if (left < 10) left = 10;
+        if (left + dropdownWidth > window.innerWidth - 10) {
+            left = window.innerWidth - dropdownWidth - 10;
+        }
+
+        // If there's not enough space above, position below the button
+        if (top < 10) {
+            top = buttonRect.bottom + 10;
+        }
+
+        // Forcefully set all styles to override CSS
+        voiceListDropdown.style.cssText = `
+            left: ${left}px !important;
+            top: ${top}px !important;
+            width: ${dropdownWidth}px !important;
+            height: ${dropdownHeight}px !important;
+            max-height: ${dropdownHeight}px !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            z-index: 99999 !important;
+            position: fixed !important;
+        `;
+
+        voiceListDropdown.classList.remove('opacity-0', 'invisible', 'max-h-0');
+        voiceListDropdown.classList.add('opacity-100');
+        loadAudioFiles();
+    }
+
+    // Function to hide voice list dropdown
+    function hideVoiceListDropdown() {
+        // Remove visibility classes
+        voiceListDropdown.classList.remove('opacity-100');
+        voiceListDropdown.classList.add('opacity-0', 'invisible', 'max-h-0');
+
+        // Only override visibility styles, keep position
+        voiceListDropdown.style.opacity = '0';
+        voiceListDropdown.style.visibility = 'hidden';
+        voiceListDropdown.style.maxHeight = '0px';
+        voiceListDropdown.style.zIndex = '-1';
+    }
+
+    // Function to close voice list dropdown
+    function closeVoiceListDropdown() {
+        hideVoiceListDropdown();
+    }
+
+    // Voice list button click handler
+    voiceListBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleVoiceListDropdown();
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        const isVisible = !voiceListDropdown.classList.contains('invisible');
+        if (isVisible && !voiceListDropdown.contains(e.target) && e.target !== voiceListBtn) {
+            closeVoiceListDropdown();
+        }
+    });
+
+    // Prevent dropdown from closing when clicking inside it
+    voiceListDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
 
     /**
      * Below is the theme toggle functionality

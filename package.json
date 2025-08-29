@@ -1,6 +1,6 @@
 {
-  "name": "kokoro-voice",
-  "productName": "Kokoro Voice",
+  "name": "gvoice",
+  "productName": "GVoice",
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
@@ -17,34 +17,35 @@
   "keywords": [],
   "author": "Charles Liu",
   "license": "Apache License 2.0",
-  "description": "Kokoro Voice: Your Local TTS Engine",
+  "description": "GVoice: a google tts app",
   "devDependencies": {
-    "@electron-forge/cli": "^7.7.0",
+    "@electron-forge/cli": "^7.8.3",
     "@electron-forge/maker-deb": "^7.7.0",
     "@electron-forge/maker-rpm": "^7.7.0",
     "@electron-forge/maker-squirrel": "^7.7.0",
     "@electron-forge/maker-zip": "^7.7.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.7.0",
     "@electron-forge/plugin-fuses": "^7.7.0",
-    "@electron/fuses": "^1.8.0",
+    "@electron/fuses": "^1.0.0",
     "@tailwindcss/cli": "^4.0.12",
     "autoprefixer": "^10.4.21",
-    "electron": "^35.0.0",
-    "electron-builder": "^25.1.8",
+    "electron": "^37.4.0",
+    "electron-builder": "^26.0.12",
+    "electron-forge": "^5.2.4",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.12"
   },
   "dependencies": {
-    "@iarna/toml": "^2.2.5",
-    "electron-squirrel-startup": "^1.0.1",
-    "kokoro-js": "^1.2.0",
-    "undici": "^7.4.0"
+    "@google/genai": "^0.3.0",
+    "js-yaml": "^4.1.0",
+    "undici": "^7.4.0",
+    "wav": "^1.0.2"
   },
   "build": {
-    "asar": false,
-    "appId": "com.activebook.kokoro-voice",
+    "asar": true,
+    "appId": "com.activebook.gvoice",
     "asarUnpack": [
-      "node_modules/@huggingface/**/*"
+      
     ],
     "files": [
       "**/*",
@@ -61,10 +62,12 @@
       "!.gitignore",
       "!screenshots/**/*"
     ],
-    "extraResources": [{
-      "from": "assets",
-      "to": "assets"
-    }],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets"
+      }
+    ],
     "mac": {
       "target": "dir",
       "icon": "assets/logo.icns"

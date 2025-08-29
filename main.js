@@ -54,11 +54,11 @@ app.on('window-all-closed', function () {
 function prepareUserDataDir() {
     // Get user data directory (safe for read/write operations)
     const userDataPath = app.getPath('userData');
-    const kokoroVoicePath = path.join(userDataPath, 'kokorovoice');
+    const gvoiceOutputPath = path.join(userDataPath, 'gvoice-output');
 
     // Create directory if it doesn't exist
-    fs.mkdir(kokoroVoicePath, { recursive: true });
-    setAppUserDataDir(kokoroVoicePath);
+    fs.mkdir(gvoiceOutputPath, { recursive: true });
+    setAppUserDataDir(gvoiceOutputPath);
 }
 
 ipcMain.on('main-process-log', (event, ...args) => {

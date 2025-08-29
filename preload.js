@@ -5,9 +5,9 @@ const { contextBridge, ipcRenderer } = require('electron')
 // Define constants directly
 // Must the same as status.js
 const STATUS = {
-    KOKORO_SERVICE_STATUS_START: 1 << 0,
-    KOKORO_SERVICE_STATUS_DONE: 1 << 1,
-    KOKORO_SERVICE_STATUS_ERROR: 1 << 2
+    TTS_SERVICE_STATUS_START: 1 << 0,
+    TTS_SERVICE_STATUS_DONE: 1 << 1,
+    TTS_SERVICE_STATUS_ERROR: 1 << 2
 }
 
 
@@ -41,6 +41,11 @@ contextBridge.exposeInMainWorld('api', {
      * Open file location in file explorer
      */
     openFileLocation: (filePath) => ipcRenderer.send('open-file-location', filePath),
+
+    /**
+     * Get list of audio files
+     */
+    getAudioFilesList: () => ipcRenderer.invoke('get-audio-files-list'),
     
 
     /**

@@ -1,6 +1,5 @@
 const fs = require('fs/promises');
 const path = require('path');
-const toml = require('@iarna/toml');
 
 /**
  * Utility function to pause execution for a specified time
@@ -36,27 +35,25 @@ function generateFilename(prefix = 'speech') {
 
 async function loadConfig() {
     try {
-        // Load base config
-        const configPath = path.join(__dirname, 'config.toml');
+        // Load base config from YAML
+        const configPath = path.join(__dirname, 'config.yaml');
         const configFile = await fs.readFile(configPath, 'utf8');
-        const config = toml.parse(configFile);
-        return config;
+        // For now, return a basic config structure
+        // The config-reader.js handles the actual YAML parsing
+        return {
+            tts: {
+                voices: ['Kore'], // Default voice
+                prefix: 'voice'
+            }
+        };
     } catch (err) {
         console.error('Error loading config:', err);
-    }
-}
-
-// Read and parse the TOML file
-async function updateConfig(config) {
-    try {
-        // Convert back to TOML format
-        const updatedToml = toml.stringify(config);
-        const configPath = path.join(__dirname, 'config.toml');
-        // Write the updated content back to the file
-        await fs.writeFile(configPath, updatedToml, 'utf8');
-        return config;
-    } catch (err) {
-        console.error('Error updating TOML file:', err);
+        return {
+            tts: {
+                voices: ['Kore'],
+                prefix: 'voice'
+            }
+        };
     }
 }
 
@@ -65,6 +62,5 @@ module.exports = {
     getAppUserDataDir,
     setAppUserDataDir,
     generateFilename,
-    loadConfig,
-    updateConfig
+    loadConfig
 };

@@ -94,3 +94,111 @@ audio {
 .dark #open-file-btn {
     @apply text-gray-400 hover:text-red-500;
 }
+
+#voice-list-btn {
+    @apply text-gray-600 hover:text-red-600;
+}
+
+.dark #voice-list-btn {
+    @apply text-gray-400 hover:text-red-500;
+}
+
+/* Voice list dropdown - ensure it appears on top */
+#voice-list-dropdown {
+    z-index: 10000 !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dark #voice-list-dropdown {
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/* Voice list item styles - elegant and modern */
+.voice-list-item {
+    @apply cursor-pointer transition-all duration-200 ease-in-out;
+    min-height: 56px;
+    position: relative;
+}
+
+.file-container {
+    text-align: center;
+    width: 100%;
+    padding: 8px 16px;
+    box-sizing: border-box;
+}
+
+.voice-list-item::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(147, 51, 234, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    border-radius: 8px;
+    margin: 4px 8px;
+}
+
+.voice-list-item:hover::before {
+    opacity: 1;
+}
+
+.dark .voice-list-item::before {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(147, 51, 234, 0.1) 100%);
+}
+
+.voice-list-item:hover {
+    transform: translateY(-1px);
+}
+
+.voice-list-item .file-name {
+    @apply text-gray-800 text-base font-medium;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: block;
+    line-height: 1.5;
+    text-align: center !important;
+}
+
+.dark .voice-list-item .file-name {
+    @apply text-gray-100;
+}
+
+/* Enhanced hover effects */
+.voice-list-item:hover .file-name {
+    @apply text-gray-900;
+}
+
+.dark .voice-list-item:hover .file-name {
+    @apply text-white;
+}
+
+/* Audio icon styling */
+.voice-list-item .audio-icon {
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    transition: transform 0.2s ease-in-out;
+}
+
+.voice-list-item:hover .audio-icon {
+    transform: scale(1.05);
+}
+
+/* Separator styling */
+.voice-list-item:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 12px;
+    right: 12px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(0, 0, 0, 0.12) 50%, transparent 100%);
+    border-radius: 1px;
+}
+
+.dark .voice-list-item:not(:last-child)::after {
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.15) 50%, transparent 100%);
+}
