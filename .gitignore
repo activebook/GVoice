@@ -1,6 +1,7 @@
 # Specific to this project
 design.md
 config.yaml
+/src/styles-output.css
 
 # Common Practice
 .DS_Store
