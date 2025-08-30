@@ -129,20 +129,28 @@ GVoice is a lightweight, desktop Text-to-Speech (TTS) application powered by Goo
 ### Project Structure
 ```
 GVoice/
-├── main.js              # Electron main process
-├── preload.js           # Preload script for secure API exposure
+├── main.ts              # Electron main process
+├── preload.ts           # Preload script for secure API exposure
 ├── src/
 │   ├── index.html       # Main UI
-│   ├── renderer.js      # Frontend logic
+│   ├── renderer.ts      # Frontend logic
 │   └── styles.css       # Tailwind CSS styles
-├── tts-service.js       # TTS service handlers
-├── tts-worker.js        # Google AI TTS integration
-├── config-reader.js     # Configuration management
-├── utils.js             # Utility functions
+├── tts-service.ts       # TTS service handlers
+├── tts-worker.ts        # Google AI TTS integration
+├── config-reader.ts     # Configuration management
+├── utils.ts             # Utility functions
 ├── config.yaml          # Voice and settings configuration
 ├── package.json         # Dependencies and scripts
 └── assets/              # App icons and assets
 ```
+
+## Directory Purposes:
+
+- `./`, `src/` - TypeScript source files
+- `lib/` - Compiled JavaScript (from TypeScript)
+- `dist/` - Packaged application (from Electron Builder)
+- `out/` - Published releases (from Electron Forge)
+
 
 ### Development Commands
 - `npm run watch:css` - Watch CSS changes during development

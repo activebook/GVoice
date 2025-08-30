@@ -3,7 +3,7 @@
   "productName": "GVoice",
   "version": "1.0.2",
   "type": "module",
-  "main": "dist/main.js",
+  "main": "lib/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx tsc && electron-forge start",
@@ -53,7 +53,10 @@
     "appId": "com.activebook.gvoice",
     "asarUnpack": [],
     "files": [
-      "**/*",
+      "lib/**/*",
+      "assets/**/*",
+      "config.yaml",
+      "node_modules/**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
       "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
       "!**/node_modules/*/.bin",
