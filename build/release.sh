@@ -158,9 +158,17 @@ elif [ "$MODE" = "release" ]; then
     echo "Skipping tag creation and push as tag already exists."
   fi
 
-  # Create GitHub release
-  echo "Creating GitHub release..."
-  RELEASE_DATA=$(cat <<EOF
+  # Check if GitHub release already exists for this tag
+  echo "Checking if GitHub release already exists for tag $VERSION..."
+  EXISTING_RELEASE_RESPONSE=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" "https://api.github.com/repos/$OWNER/$REPO/releases/tags/$VERSION")
+
+  RELEASE_ID=$(echo "$EXISTING_RELEASE_RESPONSE" | grep -o '"id": *[0-9]*' | head -n 1 | sed 's/"id": *//')
+  UPLOAD_URL=$(echo "$EXISTING_RELEASE_RESPONSE" | grep -o '"upload_url": *"[^"]*"' | sed 's/"upload_url": *"\([^"]*\)"/\1/' | sed 's/{?name,label}//')
+
+  if [ -z "$RELEASE_ID" ] || [ -z "$UPLOAD_URL" ]; then
+    # Release doesn't exist, create it
+    echo "Release does not exist. Creating GitHub release..."
+    RELEASE_DATA=$(cat <<EOF
 {
   "tag_name": "$VERSION",
   "name": "Release $VERSION",
@@ -169,16 +177,20 @@ elif [ "$MODE" = "release" ]; then
   "prerelease": false
 }
 EOF
-  )
+    )
 
-  CREATE_RELEASE_RESPONSE=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" -d "$RELEASE_DATA" "https://api.github.com/repos/$OWNER/$REPO/releases")
+    CREATE_RELEASE_RESPONSE=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" -d "$RELEASE_DATA" "https://api.github.com/repos/$OWNER/$REPO/releases")
 
-  RELEASE_ID=$(echo "$CREATE_RELEASE_RESPONSE" | grep -o '"id": *[0-9]*' | head -n 1 | sed 's/"id": *//')
-  UPLOAD_URL=$(echo "$CREATE_RELEASE_RESPONSE" | grep -o '"upload_url": *"[^"]*"' | sed 's/"upload_url": *"\([^"]*\)"/\1/' | sed 's/{?name,label}//')
+    RELEASE_ID=$(echo "$CREATE_RELEASE_RESPONSE" | grep -o '"id": *[0-9]*' | head -n 1 | sed 's/"id": *//')
+    UPLOAD_URL=$(echo "$CREATE_RELEASE_RESPONSE" | grep -o '"upload_url": *"[^"]*"' | sed 's/"upload_url": *"\([^"]*\)"/\1/' | sed 's/{?name,label}//')
 
-  if [ -z "$RELEASE_ID" ] || [ -z "$UPLOAD_URL" ]; then
-    echo "Error: Failed to create GitHub release."
-    exit 1
+    if [ -z "$RELEASE_ID" ] || [ -z "$UPLOAD_URL" ]; then
+      echo "Error: Failed to create GitHub release."
+      echo "Response: $CREATE_RELEASE_RESPONSE"
+      exit 1
+    fi
+  else
+    echo "GitHub release already exists for tag $VERSION. Using existing release."
   fi
 
   # Check if dist/mac exists and has content before zipping
