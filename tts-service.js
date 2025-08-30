@@ -43,8 +43,14 @@ function setupTTSHandlers() {
         }
 
         if (!voice || (voice && voice.trim() === "")) {
-            const defaultSettings = getDefaultSettings();
-            voice = defaultSettings?.defaultVoice || 'Kore';
+            // First check if defaultVoice is set in user settings
+            if (settings && settings.defaultVoice) {
+                voice = settings.defaultVoice;
+            } else {
+                // Fall back to config default
+                const defaultSettings = getDefaultSettings();
+                voice = defaultSettings?.defaultVoice || 'Kore';
+            }
         }
 
         if (!filePrefix || (filePrefix && filePrefix.trim() === "")) {

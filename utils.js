@@ -18,7 +18,7 @@ function setAppUserDataDir(dir) {
     appUserDataDir = dir;
 }
 
-function generateFilename(prefix = 'speech') {
+function generateFilename(text = '', prefix = 'speech') {
     const now = new Date();
 
     // Format: YYMMDD-HHMMSS
@@ -30,7 +30,27 @@ function generateFilename(prefix = 'speech') {
     const seconds = now.getSeconds().toString().padStart(2, '0');
 
     const timestamp = `${year}${month}${day}-${hours}${minutes}${seconds}`;
-    return `${prefix}_${timestamp}.wav`;
+
+    // Generate prefix from first two words of text
+    let textPrefix = prefix; // fallback to original prefix
+    if (text && text.trim()) {
+        // Clean the text: remove extra whitespace, punctuation, and convert to lowercase
+        const cleanText = text.trim().toLowerCase()
+            .replace(/[^\w\s]/g, '') // Remove punctuation
+            .replace(/\s+/g, ' '); // Normalize whitespace
+
+        const words = cleanText.split(' ').filter(word => word.length > 0);
+
+        if (words.length >= 2) {
+            // Take first two words and join with underscore
+            textPrefix = words.slice(0, 2).join('_');
+        } else if (words.length === 1) {
+            // If only one word, use it
+            textPrefix = words[0];
+        }
+    }
+
+    return `${textPrefix}_${timestamp}.wav`;
 }
 
 async function loadConfig() {

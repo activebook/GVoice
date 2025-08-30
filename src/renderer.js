@@ -132,13 +132,16 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear existing options
         voiceSelect.innerHTML = '';
 
-        // Add each voice as an option
+        // Add each voice as an option with name and description
         voices.forEach(voice => {
             const option = document.createElement('option');
             option.value = voice.id;
-            option.textContent = voice.name;
+            option.textContent = `${voice.name} (${voice.description})`;
             voiceSelect.appendChild(option);
         });
+
+        // Load default voice from settings and set it as selected
+        loadDefaultVoice();
 
         showStatus(STATUS.STATUS_TYPE_INFO, 'Click "Convert to Speech" to begin conversion.');
     });
@@ -514,4 +517,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Load settings on app start
     loadSettings();
+
+    /**
+     * Default voice functionality
+     */
+    // Function to load default voice from settings
+    async function loadDefaultVoice() {
+        try {
+            const settings = await window.api.loadSettings();
+            if (settings && settings.defaultVoice) {
+                // Find the option with the matching voice name
+                const options = Array.from(voiceSelect.options);
+                const defaultOption = options.find(option => {
+                    // Extract voice name from the option text (format: "Name (Description)")
+                    const voiceName = option.textContent.split(' (')[0];
+                    return voiceName === settings.defaultVoice;
+                });
+
+                if (defaultOption) {
+                    voiceSelect.value = defaultOption.value;
+                }
+            }
+        } catch (error) {
+            console.error('Error loading default voice:', error);
+        }
+    }
+
+    // Function to save selected voice as default
+    async function saveDefaultVoice(voiceName) {
+        try {
+            const currentSettings = await window.api.loadSettings() || {};
+            const updatedSettings = {
+                ...currentSettings,
+                defaultVoice: voiceName
+            };
+            await window.api.saveSettings(updatedSettings);
+        } catch (error) {
+            console.error('Error saving default voice:', error);
+        }
+    }
+
+    // Listen for voice selection changes and save as default
+    voiceSelect.addEventListener('change', () => {
+        // Extract voice name from selected option text (format: "Name (Description)")
+        const selectedOption = voiceSelect.options[voiceSelect.selectedIndex];
+        const voiceName = selectedOption.textContent.split(' (')[0];
+        saveDefaultVoice(voiceName);
+    });
 });

@@ -38,7 +38,7 @@ async function saveWaveFile(
 }
 
 async function generateSpeech(text, voice, dir, prefix, settings = {}) {
-    const filename = generateFilename(prefix);
+    const filename = generateFilename(text, prefix);
     const outputPath = path.join(dir, filename);
 
     // Get settings from parameters, fallback to config

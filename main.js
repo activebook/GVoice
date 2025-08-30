@@ -112,7 +112,8 @@ ipcMain.handle('load-settings', async (event) => {
             return {
                 apiKey: '',
                 speechStyle: '',
-                ttsEngine: 'gemini-2.5-flash-preview-tts'
+                ttsEngine: 'gemini-2.5-flash-preview-tts',
+                defaultVoice: 'Kore'
             };
         }
 
@@ -123,7 +124,8 @@ ipcMain.handle('load-settings', async (event) => {
         return settings || {
             apiKey: '',
             speechStyle: '',
-            ttsEngine: 'gemini-2.5-flash-preview-tts'
+            ttsEngine: 'gemini-2.5-flash-preview-tts',
+            defaultVoice: 'Kore'
         };
     } catch (error) {
         console.error('Error loading settings:', error);
@@ -131,7 +133,8 @@ ipcMain.handle('load-settings', async (event) => {
         return {
             apiKey: '',
             speechStyle: '',
-            ttsEngine: 'gemini-2.5-flash-preview-tts'
+            ttsEngine: 'gemini-2.5-flash-preview-tts',
+            defaultVoice: 'Kore'
         };
     }
 });
