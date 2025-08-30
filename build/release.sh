@@ -181,6 +181,12 @@ EOF
     exit 1
   fi
 
+  # Check if dist/mac exists and has content before zipping
+  if [ ! -d "dist/mac" ] || [ -z "$(ls -A dist/mac 2>/dev/null)" ]; then
+    echo "Error: Build directory dist/mac/ does not exist or is empty. Cannot create zip file."
+    exit 1
+  fi
+
   # Zip the build files
   echo "Zipping build files from dist/mac/..."
   ZIP_FILE="GVoice-$VERSION-mac.zip"
