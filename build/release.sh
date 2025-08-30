@@ -197,7 +197,7 @@ elif [ "$MODE" = "release" ]; then
   echo "Zipping build files from dist/mac/..."
   ZIP_FILE="GVoice-$VERSION-mac.zip"
   run_or_echo mkdir -p out
-  run_or_echo cd dist/mac && zip -r "../../out/$ZIP_FILE" . && cd ../..
+  run_or_echo cd dist/mac && 7z a "../../out/$ZIP_FILE" *.app && cd ../..
 
   # Upload the zip file
   echo "Uploading $ZIP_FILE to GitHub release..."
