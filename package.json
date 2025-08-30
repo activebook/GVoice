@@ -1,7 +1,7 @@
 {
   "name": "gvoice",
   "productName": "GVoice",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -12,7 +12,8 @@
     "build:css": "tailwindcss -i ./src/styles.css -o ./src/styles-output.css",
     "watch:css": "tailwindcss -i ./src/styles.css -o ./src/styles-output.css --watch",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "publish": "electron-forge publish"
   },
   "keywords": [],
   "author": "Charles Liu",
@@ -26,12 +27,13 @@
     "@electron-forge/maker-zip": "^7.7.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.7.0",
     "@electron-forge/plugin-fuses": "^7.7.0",
+    "@electron-forge/publisher-github": "^7.8.3",
     "@electron/fuses": "^1.0.0",
     "@tailwindcss/cli": "^4.0.12",
     "autoprefixer": "^10.4.21",
     "electron": "^37.4.0",
     "electron-builder": "^26.0.12",
-    "electron-forge": "^5.2.4",
+    "electron-forge": "^0.0.2",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.0.12"
   },
@@ -44,9 +46,7 @@
   "build": {
     "asar": true,
     "appId": "com.activebook.gvoice",
-    "asarUnpack": [
-      
-    ],
+    "asarUnpack": [],
     "files": [
       "**/*",
       "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
