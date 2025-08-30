@@ -2,6 +2,7 @@ import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron';
 import path from 'path';
 import fs from 'fs/promises';
 import yaml from 'js-yaml';
+import { getAndSetProxyEnvironment } from './sys_proxy.js';
 import { setupTTSHandlers, teardownTTSHandlers } from './tts-service.js';
 import { setAppUserDataDir } from './utils.js';
 import { fileURLToPath } from 'url';
@@ -17,7 +18,9 @@ function createWindow() {
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true, // recommended
-            nodeIntegration: false // recommended
+            nodeIntegration: false, // recommended
+            // Disable Node.js integration in renderer for network access
+            nodeIntegrationInWorker: false
         }
     })
 
@@ -28,6 +31,10 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
+
+    // Set up proxy environment
+    getAndSetProxyEnvironment()
+
     // Make sure the user data directory exists
     prepareUserDataDir();
 

@@ -1,19 +1,73 @@
 import { GoogleGenAI } from "@google/genai";
-import { ProxyAgent, setGlobalDispatcher } from 'undici';
 import path from 'path';
 import wav from 'wav';
-import { generateFilename } from './utils.js';
 import { getDefaultSettings } from './config-reader.js';
 
-// Conditionally set proxy based on environment variables
-const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
+async function generateFilename(text = '', prefix = 'speech', apiKey?: string, model?: string, namePrompt?: string): Promise<string> {
+    const now = new Date();
 
-if (proxyUrl) {
-  const proxyAgent = new ProxyAgent(proxyUrl);
-  setGlobalDispatcher(proxyAgent);
-  console.log(`Using proxy from environment variable: ${proxyUrl}`);
-} else {
-  console.log('No proxy environment variable found. Proceeding without proxy.');
+    // Format: YYMMDD-HHMMSS
+    const year = now.getFullYear().toString().slice(-2); // last 2 digits of year
+    const month = (now.getMonth() + 1).toString().padStart(2, '0'); // months are 0-indexed
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+
+    const timestamp = `${year}${month}${day}-${hours}${minutes}${seconds}`;
+
+    let textPrefix = prefix; // fallback to original prefix
+
+    // Try AI-generated filename first if API key is available
+    if (apiKey && apiKey !== 'your_google_ai_api_key_here' && text && text.trim()) {
+        try {
+            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const prompt = namePrompt || "Generate a short filename around 5-10 words for the following content:";
+            const response = await ai.models.generateContent({
+                model: model || "gemini-2.0-flash",
+                contents: `${prompt} ${text}`,
+            });
+
+            if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
+                const aiFilename = response.candidates[0].content.parts[0].text.trim();
+                // Clean the AI-generated filename: remove extra whitespace, punctuation, and convert to lowercase
+                textPrefix = aiFilename
+                    .toLowerCase()
+                    .replace(/[^\w\s]/g, '') // Remove punctuation
+                    .replace(/\s+/g, '_') // Replace spaces with underscores
+                    .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+
+                // Limit to reasonable length
+                if (textPrefix.length > 50) {
+                    textPrefix = textPrefix.substring(0, 50);
+                }
+
+                console.log(`AI-generated filename prefix: ${textPrefix}`);
+            }
+        } catch (error) {
+            console.warn('AI filename generation failed, falling back to text-based method:', error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    // Fallback to text-based method if AI failed or no API key
+    if (textPrefix === prefix && text && text.trim()) {
+        // Clean the text: remove extra whitespace, punctuation, and convert to lowercase
+        const cleanText = text.trim().toLowerCase()
+            .replace(/[^\w\s]/g, '') // Remove punctuation
+            .replace(/\s+/g, ' '); // Normalize whitespace
+
+        const words = cleanText.split(' ').filter(word => word.length > 0);
+
+        if (words.length >= 2) {
+            // Take first two words and join with underscore
+            textPrefix = words.slice(0, 2).join('_');
+        } else if (words.length === 1) {
+            // If only one word, use it
+            textPrefix = words[0];
+        }
+    }
+
+    return `${timestamp}_${textPrefix}.wav`;
 }
 
 async function saveWaveFile(
