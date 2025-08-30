@@ -74,7 +74,7 @@ async function generateSpeech(text, voice, dir, prefix, settings = {}) {
         },
     });
 
-    console.log('API Response structure:', JSON.stringify(response, null, 2));
+    //console.log('API Response structure:', JSON.stringify(response, null, 2));
 
     // Try different possible response structures
     let data = null;
