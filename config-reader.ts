@@ -1,5 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 interface Voice {
   name: string;
@@ -141,7 +144,14 @@ function parseSimpleYaml(yamlContent: string): any {
  */
 function readConfig() {
   try {
-    const configPath = path.join(process.cwd(), 'config.yaml');
+    // Use __dirname to get the directory of the compiled file
+    // In development: config-reader.ts is in root, so __dirname is root
+    // In production: config-reader.js is in lib/, so go up one level to root
+    const isProduction = __dirname.includes('/lib') || __dirname.includes('\\lib');
+    const configDir = isProduction ? path.join(__dirname, '..') : __dirname;
+    const configPath = path.join(configDir, 'config.yaml');
+
+    console.log('Config path:', configPath);
     const yamlContent = fs.readFileSync(configPath, 'utf8');
     const config = parseSimpleYaml(yamlContent);
 

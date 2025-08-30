@@ -7,15 +7,15 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npx tsc && electron-forge start",
-    "build": "npx tsc && electron-builder",
-    "build:mac": "npx tsc && electron-builder --mac",
-    "build:win": "npx tsc && electron-builder --win",
+    "build": "npm run build:css && npx tsc && electron-builder",
+    "build:mac": "npm run build:css && npx tsc && electron-builder --mac",
+    "build:win": "npm run build:css && npx tsc && electron-builder --win",
     "build:css": "tailwindcss -i ./src/styles.css -o ./src/styles-output.css",
     "watch:css": "tailwindcss -i ./src/styles.css -o ./src/styles-output.css --watch",
     "build:ts": "npx tsc",
-    "package": "npx tsc && electron-forge package",
-    "make": "npx tsc && electron-forge make",
-    "publish": "npx tsc && electron-forge publish"
+    "package": "npm run build:css && npx tsc && electron-forge package",
+    "make": "npm run build:css && npx tsc && electron-forge make",
+    "publish": "npm run build:css && npx tsc && electron-forge publish"
   },
   "keywords": [],
   "author": "Charles Liu",
@@ -54,6 +54,7 @@
     "asarUnpack": [],
     "files": [
       "lib/**/*",
+      "src/**/*",
       "assets/**/*",
       "config.yaml",
       "node_modules/**/*",
