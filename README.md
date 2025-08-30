@@ -8,6 +8,7 @@ GVoice is a lightweight, desktop Text-to-Speech (TTS) application powered by Goo
 - **Multiple Voices**: Choose from 30+ pre-built voices with different personalities and tones
 - **Dark/Light Mode**: Toggle between themes for comfortable usage in any environment
 - **Customizable Speech Styles**: Add custom prompts to control the speaking style and tone
+- **AI-Powered Filename Generation**: Automatically generates descriptive filenames using AI based on content
 - **Audio File Management**: Automatically saves generated audio files and provides easy access
 - **Voice List**: Browse and replay previously generated audio files
 - **Settings Management**: Configure API keys, TTS engines, and preferences
@@ -123,6 +124,10 @@ GVoice is a lightweight, desktop Text-to-Speech (TTS) application powered by Goo
 - Sadachbia (Lively)
 - Sadaltager (Knowledgeable)
 - Sulafat (Warm)
+
+## Filename Generation
+
+GVoice features intelligent filename generation that automatically creates descriptive names for your audio files based on their content.
 
 ## Development
 

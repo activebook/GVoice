@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import path from 'path';
+import { GoogleGenAI } from "@google/genai";
 
 /**
  * Utility function to pause execution for a specified time
@@ -18,7 +19,7 @@ function setAppUserDataDir(dir: string): void {
     appUserDataDir = dir;
 }
 
-function generateFilename(text = '', prefix = 'speech'): string {
+async function generateFilename(text = '', prefix = 'speech', apiKey?: string, model?: string, namePrompt?: string): Promise<string> {
     const now = new Date();
 
     // Format: YYMMDD-HHMMSS
@@ -31,9 +32,41 @@ function generateFilename(text = '', prefix = 'speech'): string {
 
     const timestamp = `${year}${month}${day}-${hours}${minutes}${seconds}`;
 
-    // Generate prefix from first two words of text
     let textPrefix = prefix; // fallback to original prefix
-    if (text && text.trim()) {
+
+    // Try AI-generated filename first if API key is available
+    if (apiKey && apiKey !== 'your_google_ai_api_key_here' && text && text.trim()) {
+        try {
+            const ai = new GoogleGenAI({ apiKey: apiKey });
+            const prompt = namePrompt || "Generate a short filename around 5-10 words for the following content:";
+            const response = await ai.models.generateContent({
+                model: model || "gemini-2.0-flash",
+                contents: `${prompt} ${text}`,
+            });
+
+            if (response.candidates?.[0]?.content?.parts?.[0]?.text) {
+                const aiFilename = response.candidates[0].content.parts[0].text.trim();
+                // Clean the AI-generated filename: remove extra whitespace, punctuation, and convert to lowercase
+                textPrefix = aiFilename
+                    .toLowerCase()
+                    .replace(/[^\w\s]/g, '') // Remove punctuation
+                    .replace(/\s+/g, '_') // Replace spaces with underscores
+                    .replace(/^_+|_+$/g, ''); // Remove leading/trailing underscores
+
+                // Limit to reasonable length
+                if (textPrefix.length > 50) {
+                    textPrefix = textPrefix.substring(0, 50);
+                }
+
+                console.log(`AI-generated filename prefix: ${textPrefix}`);
+            }
+        } catch (error) {
+            console.warn('AI filename generation failed, falling back to text-based method:', error instanceof Error ? error.message : String(error));
+        }
+    }
+
+    // Fallback to text-based method if AI failed or no API key
+    if (textPrefix === prefix && text && text.trim()) {
         // Clean the text: remove extra whitespace, punctuation, and convert to lowercase
         const cleanText = text.trim().toLowerCase()
             .replace(/[^\w\s]/g, '') // Remove punctuation
@@ -50,7 +83,7 @@ function generateFilename(text = '', prefix = 'speech'): string {
         }
     }
 
-    return `${textPrefix}_${timestamp}.wav`;
+    return `${timestamp}_${textPrefix}.wav`;
 }
 
 async function loadConfig(): Promise<any> {

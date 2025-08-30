@@ -203,6 +203,12 @@ elif [ "$MODE" = "release" ]; then
   echo "Uploading $ZIP_FILE to GitHub release..."
   curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/zip" --data-binary @"out/$ZIP_FILE" "$UPLOAD_URL?name=$ZIP_FILE"
 
+  if [ $? -ne 0 ]; then
+    echo "Error: Failed to upload $ZIP_FILE to GitHub release."
+    exit 1
+  fi
+  echo 
+  echo "Zip file uploaded successfully."
   echo "Release v$VERSION published successfully!"
 elif [ "$MODE" = "dryrun" ]; then
   echo "Dryrun mode: Simulating build and release for v$VERSION"

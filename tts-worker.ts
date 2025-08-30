@@ -37,11 +37,15 @@ async function saveWaveFile(
 }
 
 async function generateSpeech(text: string, voice: string, dir: string, prefix: string, settings: any = {}): Promise<string> {
-    const filename = generateFilename(text, prefix);
+    // Get settings from config
+    const defaultSettings = getDefaultSettings();
+    const apiKey = settings.apiKey || defaultSettings?.apiKey;
+    const nameModel = settings.nameModel || defaultSettings?.nameModel || 'gemini-2.0-flash';
+    const namePrompt = settings.namePrompt || defaultSettings?.namePrompt;
+    const filename = await generateFilename(text, prefix, apiKey, nameModel, namePrompt);
     const outputPath = path.join(dir, filename);
 
     // Get settings from parameters, fallback to config
-    const apiKey = settings.apiKey || getDefaultSettings()?.apiKey;
     const ttsEngine = settings.ttsEngine || 'gemini-2.5-flash-preview-tts';
     const speechStyle = settings.speechStyle || 'Generate this audio in a formal, clear, and objective news-reporting style';
 

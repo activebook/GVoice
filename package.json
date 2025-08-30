@@ -1,7 +1,7 @@
 {
   "name": "gvoice",
   "productName": "GVoice",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "type": "module",
   "main": "lib/main.js",
   "scripts": {

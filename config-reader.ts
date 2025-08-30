@@ -196,7 +196,9 @@ function getDefaultSettings() {
     defaultVoice: config.google_tts.default_voice,
     defaultLanguage: config.google_tts.default_language,
     outputFormat: config.google_tts.output_format,
-    sampleRate: config.google_tts.sample_rate
+    sampleRate: config.google_tts.sample_rate,
+    nameModel: config.google_tts.name_model,
+    namePrompt: config.google_tts.name_prompt
   };
 }
 
