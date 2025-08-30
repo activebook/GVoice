@@ -73,14 +73,128 @@ elif [ "$MODE" = "release" ]; then
     echo "Error: GITHUB_TOKEN is not set. Please check build/.env"
     exit 1
   fi
-  # Export the token for Electron Forge publisher
-  export GITHUB_TOKEN
-  echo "Building and publishing app v$VERSION using Electron Forge..."
-  run_or_echo npm run publish
+
+  # Get owner/repo from git remote
+  REMOTE_URL=$(git config --get remote.origin.url)
+  REPO_INFO=$(echo "$REMOTE_URL" | sed -n -E 's/.*github.com[:/]([^/]+)\/(.*)\.git/\1 \2/p')
+  OWNER=$(echo "$REPO_INFO" | cut -d' ' -f1)
+  REPO=$(echo "$REPO_INFO" | cut -d' ' -f2)
+
+  if [ -z "$OWNER" ] || [ -z "$REPO" ]; then
+    echo "Error: Could not parse repository owner and name from git remote 'origin'."
+    exit 1
+  fi
+
+  # Check if on the main branch
+  if [ "$(git rev-parse --abbrev-ref HEAD)" != "main" ]; then
+    echo "Error: You must be on the 'main' branch to release."
+    exit 1
+  fi
+
+  # Check if the working directory is clean
+  if ! git diff-index --quiet HEAD --; then
+    echo "Error: Working directory is not clean. Please commit or stash your changes."
+    exit 1
+  fi
+
+  # Check if the tag already exists
+  if git rev-parse "$VERSION" >/dev/null 2>&1; then
+    echo "Error: Git tag '$VERSION' already exists. Please update the version in 'package.json' before releasing."
+    exit 1
+  fi
+
+  # Generate changelog from commits since the last tag
+  LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+  CHANGELOG=""
+
+  if [ -n "$LATEST_TAG" ]; then
+    echo "Generating changelog from commits since tag: $LATEST_TAG"
+    CHANGELOG=$(git log --pretty=format:"- %s" "$LATEST_TAG"..HEAD)
+  else
+    echo "No previous tag found. Using last 10 commits for changelog."
+    CHANGELOG=$(git log --pretty=format:"- %s" -n 10)
+  fi
+
+  echo "--------------------------------------------------"
+  echo "🚀 Ready to release version: $VERSION"
+  echo "--------------------------------------------------"
+  echo "Changelog to be included in the tag:"
+  echo -e "$CHANGELOG"
+  echo "--------------------------------------------------"
+
+  if [ "$MODE" = "dryrun" ]; then
+    echo "[DRY RUN] Would build application."
+    echo "[DRY RUN] Would create tag '$VERSION'."
+    echo "[DRY RUN] Would push tag to origin."
+    echo "[DRY RUN] Would create GitHub release."
+    echo "[DRY RUN] Would zip dist/mac/ and upload."
+    exit 0
+  fi
+
+  read -p "Do you want to proceed with the release? (y/n) " -n 1 -r
+  echo # Move to a new line
+  if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Release cancelled."
+    exit 1
+  fi
+
+  # Check if build exists, if not, build the application
+  if [ ! -d "dist/mac" ] || [ -z "$(ls -A dist/mac 2>/dev/null)" ]; then
+    echo "No built application found in dist/mac/. Building application v$VERSION..."
+    run_or_echo npm run build:mac
+  else
+    echo "Built application found in dist/mac/. Skipping build."
+  fi
+
+  # Create and push a new git tag
+  echo "Creating git tag $VERSION..."
+  git tag -a "$VERSION" -m "Release $VERSION" -m "$CHANGELOG"
+
+  echo "Pushing tag to origin..."
+  git push origin "$VERSION"
+
+  # Create GitHub release
+  echo "Creating GitHub release..."
+  RELEASE_DATA=$(cat <<EOF
+{
+  "tag_name": "$VERSION",
+  "name": "Release $VERSION",
+  "body": "$CHANGELOG",
+  "draft": false,
+  "prerelease": false
+}
+EOF
+  )
+
+  CREATE_RELEASE_RESPONSE=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" -d "$RELEASE_DATA" "https://api.github.com/repos/$OWNER/$REPO/releases")
+
+  RELEASE_ID=$(echo "$CREATE_RELEASE_RESPONSE" | grep -o '"id": *[0-9]*' | head -n 1 | sed 's/"id": *//')
+  UPLOAD_URL=$(echo "$CREATE_RELEASE_RESPONSE" | grep -o '"upload_url": *"[^"]*"' | sed 's/"upload_url": *"\([^"]*\)"/\1/' | sed 's/{?name,label}//')
+
+  if [ -z "$RELEASE_ID" ] || [ -z "$UPLOAD_URL" ]; then
+    echo "Error: Failed to create GitHub release."
+    exit 1
+  fi
+
+  # Zip the build files
+  echo "Zipping build files from dist/mac/..."
+  ZIP_FILE="GVoice-$VERSION-mac.zip"
+  run_or_echo cd dist/mac && zip -r "../../$ZIP_FILE" . && cd ../..
+
+  # Upload the zip file
+  echo "Uploading $ZIP_FILE to GitHub release..."
+  curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/zip" --data-binary @"$ZIP_FILE" "$UPLOAD_URL?name=$ZIP_FILE"
+
   echo "Release v$VERSION published successfully!"
 elif [ "$MODE" = "dryrun" ]; then
   echo "Dryrun mode: Simulating build and release for v$VERSION"
-  echo "Would check GITHUB_TOKEN and export it"
-  echo "Would run: npm run publish"
+  echo "Would check GITHUB_TOKEN"
+  echo "Would get owner/repo"
+  echo "Would check branch and git status"
+  echo "Would generate changelog"
+  echo "Would build application"
+  echo "Would create and push tag"
+  echo "Would create GitHub release"
+  echo "Would zip and upload"
   echo "Dryrun completed!"
 fi
