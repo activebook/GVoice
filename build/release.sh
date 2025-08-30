@@ -168,16 +168,10 @@ elif [ "$MODE" = "release" ]; then
   if [ -z "$RELEASE_ID" ] || [ -z "$UPLOAD_URL" ]; then
     # Release doesn't exist, create it
     echo "Release does not exist. Creating GitHub release..."
-    RELEASE_DATA=$(cat <<EOF
-{
-  "tag_name": "$VERSION",
-  "name": "Release $VERSION",
-  "body": "$CHANGELOG",
-  "draft": false,
-  "prerelease": false
-}
-EOF
-    )
+    # Escape the changelog for JSON
+    CHANGELOG_ESCAPED=$(printf '%s\n' "$CHANGELOG" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+
+    RELEASE_DATA="{\"tag_name\":\"$VERSION\",\"name\":\"Release $VERSION\",\"body\":\"$CHANGELOG_ESCAPED\",\"draft\":false,\"prerelease\":false}"
 
     CREATE_RELEASE_RESPONSE=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Accept: application/vnd.github.v3+json" -d "$RELEASE_DATA" "https://api.github.com/repos/$OWNER/$REPO/releases")
 
