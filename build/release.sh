@@ -179,11 +179,12 @@ EOF
   # Zip the build files
   echo "Zipping build files from dist/mac/..."
   ZIP_FILE="GVoice-$VERSION-mac.zip"
-  run_or_echo cd dist/mac && zip -r "../../$ZIP_FILE" . && cd ../..
+  run_or_echo mkdir -p out
+  run_or_echo cd dist/mac && zip -r "../../out/$ZIP_FILE" . && cd ../..
 
   # Upload the zip file
   echo "Uploading $ZIP_FILE to GitHub release..."
-  curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/zip" --data-binary @"$ZIP_FILE" "$UPLOAD_URL?name=$ZIP_FILE"
+  curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" -H "Content-Type: application/zip" --data-binary @"out/$ZIP_FILE" "$UPLOAD_URL?name=$ZIP_FILE"
 
   echo "Release v$VERSION published successfully!"
 elif [ "$MODE" = "dryrun" ]; then
