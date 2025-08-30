@@ -1,19 +1,21 @@
 {
   "name": "gvoice",
   "productName": "GVoice",
-  "version": "1.0.1",
-  "main": "main.js",
+  "version": "1.0.2",
+  "type": "module",
+  "main": "dist/main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "electron-forge start",
-    "build": "electron-builder",
-    "build:mac": "electron-builder --mac",
-    "build:win": "electron-builder --win",
+    "start": "npx tsc && electron-forge start",
+    "build": "npx tsc && electron-builder",
+    "build:mac": "npx tsc && electron-builder --mac",
+    "build:win": "npx tsc && electron-builder --win",
     "build:css": "tailwindcss -i ./src/styles.css -o ./src/styles-output.css",
     "watch:css": "tailwindcss -i ./src/styles.css -o ./src/styles-output.css --watch",
-    "package": "electron-forge package",
-    "make": "electron-forge make",
-    "publish": "electron-forge publish"
+    "build:ts": "npx tsc",
+    "package": "npx tsc && electron-forge package",
+    "make": "npx tsc && electron-forge make",
+    "publish": "npx tsc && electron-forge publish"
   },
   "keywords": [],
   "author": "Charles Liu",
@@ -30,12 +32,15 @@
     "@electron-forge/publisher-github": "^7.8.3",
     "@electron/fuses": "^1.0.0",
     "@tailwindcss/cli": "^4.0.12",
+    "@types/electron": "^1.4.38",
+    "@types/node": "^24.3.0",
     "autoprefixer": "^10.4.21",
     "electron": "^37.4.0",
     "electron-builder": "^26.0.12",
     "electron-forge": "^0.0.2",
     "postcss": "^8.5.3",
-    "tailwindcss": "^4.0.12"
+    "tailwindcss": "^4.0.12",
+    "typescript": "^5.9.2"
   },
   "dependencies": {
     "@google/genai": "^0.3.0",

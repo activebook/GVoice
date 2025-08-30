@@ -1,9 +1,5 @@
-const { execSync } = require('child_process');
-
-// This is a known issue with Undici's proxy handling in some configurations.
-// In node, the proxy settings are not being picked up correctly.
-// So we must set it manually by using system proxy settings through command.
-const { setGlobalDispatcher, ProxyAgent } = require("undici");
+import { execSync } from 'child_process';
+import { setGlobalDispatcher, ProxyAgent } from "undici";
 
 // Method 2: Using the global-agent package (not recommended)
 // No use!!!
@@ -41,7 +37,7 @@ function getSystemProxy() {
 			}
 		}
 	} catch (error) {
-		console.error('Error getting system proxy:', error.message);
+		console.error('Error getting system proxy:', error instanceof Error ? error.message : String(error));
 	}
 
 	return null;
@@ -62,8 +58,12 @@ function getAndSetProxyEnvironment() {
 		// Get system proxy settings (assuming macOS based on output format)
 		const proxyOutput = getSystemProxy();
 
+		if (!proxyOutput) {
+			return null;
+		}
+
 		// Parse the output
-		const proxySettings = {};
+		const proxySettings: any = {};
 		const lines = proxyOutput.trim().split('\n');
 
 		lines.forEach(line => {
@@ -95,15 +95,17 @@ function getAndSetProxyEnvironment() {
 
 		// Set the global dispatcher to use your proxy for all fetch requests.
 		proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
-		setGlobalDispatcher(new ProxyAgent(proxyUrl));
+		if (proxyUrl) {
+			setGlobalDispatcher(new ProxyAgent(proxyUrl));
+		}
 
 		return proxySettings;
 	} catch (error) {
-		console.error('Error getting and setting proxy:', error.message);
+		console.error('Error getting and setting proxy:', error instanceof Error ? error.message : String(error));
 		return null;
 	}
 }
 
-module.exports = {
+export {
 	getAndSetProxyEnvironment
 };

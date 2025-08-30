@@ -1,14 +1,11 @@
-// preload.js
-// By default, Electron's preload scripts don't support ES modules (import/export syntax)
-const { contextBridge, ipcRenderer } = require('electron')
+// preload.ts
+const { contextBridge, ipcRenderer } = require('electron');
 
-// Define constants directly
-// Must the same as status.js
 const STATUS = {
     TTS_SERVICE_STATUS_START: 1 << 0,
     TTS_SERVICE_STATUS_DONE: 1 << 1,
     TTS_SERVICE_STATUS_ERROR: 1 << 2
-}
+};
 
 
 // Expose protected methods that allow the renderer process to use

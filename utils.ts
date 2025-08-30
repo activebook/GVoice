@@ -1,24 +1,24 @@
-const fs = require('fs/promises');
-const path = require('path');
+import fs from 'fs/promises';
+import path from 'path';
 
 /**
  * Utility function to pause execution for a specified time
- * @param {number} ms - Time to sleep in milliseconds
- * @returns {Promise} Promise that resolves after the specified time
+ * @param ms - Time to sleep in milliseconds
+ * @returns Promise that resolves after the specified time
  */
-function sleep(ms) {
+function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 let appUserDataDir = '';
-function getAppUserDataDir() {
+function getAppUserDataDir(): string {
     return appUserDataDir;
 }
-function setAppUserDataDir(dir) {
+function setAppUserDataDir(dir: string): void {
     appUserDataDir = dir;
 }
 
-function generateFilename(text = '', prefix = 'speech') {
+function generateFilename(text = '', prefix = 'speech'): string {
     const now = new Date();
 
     // Format: YYMMDD-HHMMSS
@@ -53,10 +53,10 @@ function generateFilename(text = '', prefix = 'speech') {
     return `${textPrefix}_${timestamp}.wav`;
 }
 
-async function loadConfig() {
+async function loadConfig(): Promise<any> {
     try {
         // Load base config from YAML
-        const configPath = path.join(__dirname, 'config.yaml');
+        const configPath = path.join(process.cwd(), 'config.yaml');
         const configFile = await fs.readFile(configPath, 'utf8');
         // For now, return a basic config structure
         // The config-reader.js handles the actual YAML parsing
@@ -77,7 +77,7 @@ async function loadConfig() {
     }
 }
 
-module.exports = {
+export {
     sleep,
     getAppUserDataDir,
     setAppUserDataDir,

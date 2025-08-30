@@ -1,12 +1,14 @@
-// tts-service.js
+// tts-service.ts
 /**
  * TTS Service using Google GenAI
  */
-const { ipcMain, shell } = require('electron');
-const { getVoices, getDefaultSettings } = require('./config-reader');
-const { getAppUserDataDir } = require('./utils');
-const { generateSpeech } = require('./tts-worker');
-const STATUS = require('./status');
+import { ipcMain, shell } from 'electron';
+import { promises as fs } from 'fs';
+import { join as pathJoin } from 'path';
+import { getVoices, getDefaultSettings } from './config-reader.js';
+import { getAppUserDataDir } from './utils.js';
+import { generateSpeech } from './tts-worker.js';
+import { TTS_SERVICE_STATUS_START, TTS_SERVICE_STATUS_DONE, TTS_SERVICE_STATUS_ERROR } from './status.js';
 
 async function loadVoices(sender) {
     return new Promise(async (resolve, reject) => {
@@ -33,7 +35,7 @@ function setupTTSHandlers() {
 
         if (text.trim() === "") {
             const progress = {
-                status: STATUS.TTS_SERVICE_STATUS_ERROR,
+                status: TTS_SERVICE_STATUS_ERROR,
                 message: "No text provided to TTS"
             };
             if (!event.sender.isDestroyed()) {
@@ -61,20 +63,20 @@ function setupTTSHandlers() {
 
         try {
             if (!event.sender.isDestroyed()) {
-                event.sender.send('tts-progress', { status: STATUS.TTS_SERVICE_STATUS_START, message: 'Starting TTS...' });
+                event.sender.send('tts-progress', { status: TTS_SERVICE_STATUS_START, message: 'Starting TTS...' });
             }
 
             const outputPath = await generateSpeech(text, voice, appUserDataDir, filePrefix, settings);
 
             if (!event.sender.isDestroyed()) {
-                event.sender.send('tts-progress', { status: STATUS.TTS_SERVICE_STATUS_DONE, message: outputPath });
+                event.sender.send('tts-progress', { status: TTS_SERVICE_STATUS_DONE, message: outputPath });
             }
 
             return outputPath;
         } catch (error) {
             const progress = {
-                status: STATUS.TTS_SERVICE_STATUS_ERROR,
-                message: `Error generating speech: ${error.message}`
+                status: TTS_SERVICE_STATUS_ERROR,
+                message: `Error generating speech: ${error instanceof Error ? error.message : String(error)}`
             };
             if (!event.sender.isDestroyed()) {
                 event.sender.send('tts-progress', progress);
@@ -96,19 +98,21 @@ function setupTTSHandlers() {
 
     // Add handler for getting audio files list
     ipcMain.handle('get-audio-files-list', async () => {
-        const fs = require('fs/promises');
-        const path = require('path');
-        const { getAppUserDataDir } = require('./utils');
-
         try {
             const appUserDataDir = getAppUserDataDir();
             const files = await fs.readdir(appUserDataDir);
 
             // Filter for .wav files and get their stats
-            const audioFiles = [];
+            const audioFiles: Array<{
+                name: string;
+                path: string;
+                size: number;
+                created: Date;
+                modified: Date;
+            }> = [];
             for (const file of files) {
                 if (file.endsWith('.wav')) {
-                    const filePath = path.join(appUserDataDir, file);
+                    const filePath = pathJoin(appUserDataDir, file);
                     const stats = await fs.stat(filePath);
                     audioFiles.push({
                         name: file,
@@ -121,11 +125,11 @@ function setupTTSHandlers() {
             }
 
             // Sort by creation date (newest first)
-            audioFiles.sort((a, b) => b.created - a.created);
+            audioFiles.sort((a, b) => b.created.getTime() - a.created.getTime());
 
             return audioFiles;
         } catch (error) {
-            console.error('Error reading audio files:', error);
+            console.error('Error reading audio files:', error instanceof Error ? error.message : String(error));
             return [];
         }
     });
@@ -135,7 +139,7 @@ function teardownTTSHandlers() {
     // No worker to terminate
 }
 
-module.exports = {
+export {
     setupTTSHandlers,
     teardownTTSHandlers
 };

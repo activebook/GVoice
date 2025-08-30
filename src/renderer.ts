@@ -1,10 +1,38 @@
-// src/renderer.js
+export {};
+
+declare global {
+  interface Window {
+    api: {
+      convertTextToSpeech: (text: string, voice: string, filePrefix: string, settings: any) => Promise<void>;
+      onConversionProgress: (callback: (progress: any) => void) => () => void;
+      getAvailableVoices: () => Promise<void>;
+      onVoicesRetrieved: (callback: (voices: any[], filePrefix: string) => void) => () => void;
+      openFileLocation: (filePath?: string) => void;
+      getAudioFilesList: () => Promise<any[]>;
+      saveSettings: (settings: any) => Promise<void>;
+      loadSettings: () => Promise<any>;
+      STATUS: {
+        TTS_SERVICE_STATUS_START: number;
+        TTS_SERVICE_STATUS_DONE: number;
+        TTS_SERVICE_STATUS_ERROR: number;
+      };
+    };
+    darkMode: {
+      toggle: () => Promise<void>;
+    };
+    debug: {
+      log: (...args: any[]) => void;
+    };
+  }
+}
+
+// src/renderer.ts
 /**
- * This direct import won't work and isn't secure with context isolation. 
+ * This direct import won't work and isn't secure with context isolation.
  * Instead, all Electron functionality for the renderer should be:
  * Imported in the preload script
  * Exposed through contextBridge in a controlled way
- * Accessed in renderer.js through the window object (like window.api.methodName())
+ * Accessed in renderer.ts through the window object (like window.api.methodName())
  */
 //import { ipcRenderer } from 'electron'
 
@@ -17,36 +45,36 @@ const STATUS = {
 
 // src/renderer.js
 document.addEventListener('DOMContentLoaded', () => {
-    const textInput = document.getElementById('text-input');
-    const convertBtn = document.getElementById('convert-btn');
-    const audioPlayer = document.getElementById('audio-player');
-    const openFileBtn = document.getElementById('open-file-btn');
-    const voiceListBtn = document.getElementById('voice-list-btn');
-    const voiceSelect = document.getElementById('voice-select');
+    const textInput = document.getElementById('text-input') as HTMLTextAreaElement;
+    const convertBtn = document.getElementById('convert-btn') as HTMLButtonElement;
+    const audioPlayer = document.getElementById('audio-player') as HTMLAudioElement;
+    const openFileBtn = document.getElementById('open-file-btn') as HTMLButtonElement;
+    const voiceListBtn = document.getElementById('voice-list-btn') as HTMLButtonElement;
+    const voiceSelect = document.getElementById('voice-select') as HTMLSelectElement;
 
     // Settings modal elements
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsModal = document.getElementById('settings-modal');
-    const closeSettingsModal = document.getElementById('close-settings-modal');
-    const cancelSettings = document.getElementById('cancel-settings');
-    const settingsForm = document.getElementById('settings-form');
-    const apiKeyInput = document.getElementById('api-key');
-    const speechStyleInput = document.getElementById('speech-style');
-    const ttsEngineSelect = document.getElementById('tts-engine');
+    const settingsBtn = document.getElementById('settings-btn') as HTMLButtonElement;
+    const settingsModal = document.getElementById('settings-modal') as HTMLDivElement;
+    const closeSettingsModal = document.getElementById('close-settings-modal') as HTMLButtonElement;
+    const cancelSettings = document.getElementById('cancel-settings') as HTMLButtonElement;
+    const settingsForm = document.getElementById('settings-form') as HTMLFormElement;
+    const apiKeyInput = document.getElementById('api-key') as HTMLInputElement;
+    const speechStyleInput = document.getElementById('speech-style') as HTMLInputElement;
+    const ttsEngineSelect = document.getElementById('tts-engine') as HTMLSelectElement;
 
     // Voice list dropdown elements
-    const voiceListDropdown = document.getElementById('voice-list-dropdown');
-    const voiceListContainer = document.getElementById('voice-list-container');
-    const voiceListLoading = document.getElementById('voice-list-loading');
-    const voiceListEmpty = document.getElementById('voice-list-empty');
-    const voiceListItems = document.getElementById('voice-list-items');
+    const voiceListDropdown = document.getElementById('voice-list-dropdown') as HTMLDivElement;
+    const voiceListContainer = document.getElementById('voice-list-container') as HTMLDivElement;
+    const voiceListLoading = document.getElementById('voice-list-loading') as HTMLDivElement;
+    const voiceListEmpty = document.getElementById('voice-list-empty') as HTMLDivElement;
+    const voiceListItems = document.getElementById('voice-list-items') as HTMLDivElement;
 
     // Status functionality
-    function showStatus(type, message) {
-        const statusContainer = document.getElementById('status-container');
-        const statusInner = document.getElementById('status-inner');
-        const statusIcon = document.getElementById('status-icon');
-        const statusMessage = document.getElementById('status-message');
+    function showStatus(type: string, message: string) {
+        const statusContainer = document.getElementById('status-container') as HTMLDivElement;
+        const statusInner = document.getElementById('status-inner') as HTMLDivElement;
+        const statusIcon = document.getElementById('status-icon') as HTMLDivElement;
+        const statusMessage = document.getElementById('status-message') as HTMLDivElement;
 
         // Set the appropriate classes based on status type
         statusContainer.className = 'w-full mb-6 overflow-hidden transition-all duration-300';
@@ -101,11 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
         statusContainer.style.maxHeight = '100px';
 
         // Set up close button
-        document.getElementById('close-status').addEventListener('click', hideStatus);
+        const closeStatusBtn = document.getElementById('close-status') as HTMLButtonElement;
+        if (closeStatusBtn) {
+            closeStatusBtn.addEventListener('click', hideStatus);
+        }
     }
 
     function hideStatus() {
-        const statusContainer = document.getElementById('status-container');
+        const statusContainer = document.getElementById('status-container') as HTMLDivElement;
         statusContainer.style.maxHeight = '0';
     }
 
@@ -118,9 +149,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load available voices dynamically (optional)
     async function loadVoices() {
         try {
-            window.api.getAvailableVoices();
+            (window as any).api.getAvailableVoices();
         } catch (error) {
-            showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to load voices. Please try again. ${error}`);
+            showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to load voices. Please try again. ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -214,7 +245,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('TTS conversion error:', error)
 
             // Show error message
-            showStatus(STATUS.STATUS_TYPE_ERROR, `Error: ${error.message || 'Failed to convert text to speech'}`);
+            showStatus(STATUS.STATUS_TYPE_ERROR, `Error: ${error instanceof Error ? error.message : 'Failed to convert text to speech'}`);
 
             // Reset button
             convertBtn.disabled = false
@@ -305,7 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading audio files:', error);
             voiceListLoading.classList.add('hidden');
             voiceListEmpty.classList.remove('hidden');
-            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to load audio files');
+            showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to load audio files: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -388,7 +419,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Close dropdown when clicking outside
     document.addEventListener('click', (e) => {
         const isVisible = !voiceListDropdown.classList.contains('invisible');
-        if (isVisible && !voiceListDropdown.contains(e.target) && e.target !== voiceListBtn) {
+        if (isVisible && e.target instanceof Node && !voiceListDropdown.contains(e.target) && e.target !== voiceListBtn) {
             closeVoiceListDropdown();
         }
     });
@@ -401,8 +432,8 @@ document.addEventListener('DOMContentLoaded', () => {
     /**
      * Below is the theme toggle functionality
      */
-    const themeToggle = document.getElementById('theme-toggle');
-    const toggleSlider = document.getElementById('toggle-slider');
+    const themeToggle = document.getElementById('theme-toggle') as HTMLDivElement;
+    const toggleSlider = document.getElementById('toggle-slider') as HTMLDivElement;
 
     // Check for saved theme preference or use preferred color scheme
     const isDarkMode = localStorage.getItem('darkMode') === 'true' ||
@@ -465,7 +496,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error loading settings:', error);
-            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to load settings');
+            showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to load settings: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -476,7 +507,7 @@ document.addEventListener('DOMContentLoaded', () => {
             showStatus(STATUS.STATUS_TYPE_SUCESS, 'Settings saved successfully!');
         } catch (error) {
             console.error('Error saving settings:', error);
-            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to save settings');
+            showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
         }
     }
 
@@ -539,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
         } catch (error) {
-            console.error('Error loading default voice:', error);
+            console.error('Error loading default voice:', error instanceof Error ? error.message : String(error));
         }
     }
 
@@ -553,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
             };
             await window.api.saveSettings(updatedSettings);
         } catch (error) {
-            console.error('Error saving default voice:', error);
+            console.error('Error saving default voice:', error instanceof Error ? error.message : String(error));
         }
     }
 

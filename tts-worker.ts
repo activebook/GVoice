@@ -1,10 +1,9 @@
-const { GoogleGenAI } = require("@google/genai");
-const { ProxyAgent, setGlobalDispatcher } = require('undici');
-const path = require('path');
-const fs = require('fs');
-const wav = require('wav');
-const { generateFilename } = require('./utils.js');
-const { getDefaultSettings } = require('./config-reader.js');
+import { GoogleGenAI } from "@google/genai";
+import { ProxyAgent, setGlobalDispatcher } from 'undici';
+import path from 'path';
+import wav from 'wav';
+import { generateFilename } from './utils.js';
+import { getDefaultSettings } from './config-reader.js';
 
 // Conditionally set proxy based on environment variables
 const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
@@ -18,12 +17,12 @@ if (proxyUrl) {
 }
 
 async function saveWaveFile(
-  filename,
-  pcmData,
+  filename: string,
+  pcmData: Buffer,
   channels = 1,
   rate = 24000,
   sampleWidth = 2,
-) {
+): Promise<void> {
   return new Promise((resolve, reject) => {
     const writer = new wav.FileWriter(filename, {
       channels,
@@ -37,7 +36,7 @@ async function saveWaveFile(
   });
 }
 
-async function generateSpeech(text, voice, dir, prefix, settings = {}) {
+async function generateSpeech(text: string, voice: string, dir: string, prefix: string, settings: any = {}): Promise<string> {
     const filename = generateFilename(text, prefix);
     const outputPath = path.join(dir, filename);
 
@@ -61,7 +60,7 @@ async function generateSpeech(text, voice, dir, prefix, settings = {}) {
         voice: voice
     });
 
-    const response = await ai.models.generateContent({
+    const response: any = await ai.models.generateContent({
         model: ttsEngine,
         contents: [{ parts: [{ text: styledText }] }],
         config: {
@@ -110,48 +109,4 @@ async function generateSpeech(text, voice, dir, prefix, settings = {}) {
     return outputPath;
 }
 
-module.exports = { generateSpeech };
-
-
-
-
-/**
- * =================================
- * Blow down here is for testing purposes only
- * Comment out the following line to test
- * import { ipcMain } from 'electron'
- * =================================
- */
-
-const { exec } = require('child_process');
-
-function playAudio(path) {
-    return new Promise((resolve, reject) => {
-        const playCommand = process.platform === 'win32'
-            ? `start /B powershell -c (New-Object Media.SoundPlayer \'${path}\').PlaySync()`
-            : process.platform === 'darwin'
-                ? `afplay ${path}`
-                : `aplay ${path}`;
-
-        exec(playCommand, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`exec error: ${error}`);
-                reject(error);
-                return;
-            }
-            resolve();
-        });
-    });
-}
-
-async function test() {
-    // need to commend out the following line
-    //import { ipcMain } from 'electron'
-    const text = 'Hello, this is Kokoro TTS in Node.js.';
-    const voice = 'Kore';
-    const dir = './'; // or some temp dir
-    const prefix = 'test';
-    const filepath = await generateSpeech(text, voice, dir, prefix);
-    await playAudio(filepath);
-}
-//test();
+export { generateSpeech };

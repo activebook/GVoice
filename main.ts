@@ -1,9 +1,12 @@
-const { app, BrowserWindow, nativeTheme, ipcMain } = require('electron');
-const path = require('path');
-const fs = require('fs/promises');
-const yaml = require('js-yaml');
-const { setupTTSHandlers, teardownTTSHandlers } = require('./tts-service');
-const { setAppUserDataDir } = require('./utils');
+import { app, BrowserWindow, nativeTheme, ipcMain } from 'electron';
+import path from 'path';
+import fs from 'fs/promises';
+import yaml from 'js-yaml';
+import { setupTTSHandlers, teardownTTSHandlers } from './tts-service.js';
+import { setAppUserDataDir } from './utils.js';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // You don't need fileURLToPath in CommonJS since __dirname is already available
 

@@ -1,19 +1,29 @@
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+
+interface Voice {
+  name: string;
+  description?: string;
+}
+
+interface GoogleTTS {
+  voices: Voice[];
+  [key: string]: any;
+}
 
 /**
  * Simple YAML parser for basic config files
  * This is a basic implementation - for production use, consider js-yaml library
  */
-function parseSimpleYaml(yamlContent) {
+function parseSimpleYaml(yamlContent: string): any {
   const lines = yamlContent.split('\n');
-  const result = {};
+  const result: any = {};
 
   // Parse the YAML content
-  let currentSection = null;
+  let currentSection: GoogleTTS | null = null;
   let inVoicesSection = false;
-  const voices = [];
-  let currentVoice = null;
+  const voices: Voice[] = [];
+  let currentVoice: Voice | null = null;
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
@@ -43,7 +53,9 @@ function parseSimpleYaml(yamlContent) {
       const sectionName = trimmedLine.slice(0, -1);
       if (sectionName === 'voices') {
         inVoicesSection = true;
-        currentSection.voices = [];
+        if (currentSection) {
+          currentSection.voices = [];
+        }
       } else {
         inVoicesSection = false;
       }
@@ -93,7 +105,7 @@ function parseSimpleYaml(yamlContent) {
     // Handle regular key-value pairs in google_tts section
     if (!inVoicesSection && trimmedLine.includes(':')) {
       const [key, ...valueParts] = trimmedLine.split(':');
-      let value = valueParts.join(':').trim();
+      let value: any = valueParts.join(':').trim();
 
       // Remove quotes
       if ((value.startsWith('"') && value.endsWith('"')) ||
@@ -129,7 +141,7 @@ function parseSimpleYaml(yamlContent) {
  */
 function readConfig() {
   try {
-    const configPath = path.join(__dirname, 'config.yaml');
+    const configPath = path.join(process.cwd(), 'config.yaml');
     const yamlContent = fs.readFileSync(configPath, 'utf8');
     const config = parseSimpleYaml(yamlContent);
 
@@ -138,7 +150,7 @@ function readConfig() {
 
     return config;
   } catch (error) {
-    console.error('Error reading config.yaml:', error.message);
+    console.error('Error reading config.yaml:', error instanceof Error ? error.message : String(error));
     return null;
   }
 }
@@ -178,38 +190,9 @@ function getDefaultSettings() {
   };
 }
 
-// Export functions for use in other modules
-module.exports = {
+export {
   readConfig,
   getConfigValue,
   getVoices,
   getDefaultSettings
 };
-
-// Example usage
-if (require.main === module) {
-  console.log('=== Config Reader Example ===');
-
-  // Read entire config
-  const config = readConfig();
-
-  // Get specific values
-  console.log('\n=== Default Settings ===');
-  const defaults = getDefaultSettings();
-  console.log('Default Voice:', defaults?.defaultVoice);
-  console.log('Default Language:', defaults?.defaultLanguage);
-  console.log('Output Format:', defaults?.outputFormat);
-  console.log('Sample Rate:', defaults?.sampleRate);
-
-  // Get voices
-  console.log('\n=== Available Voices ===');
-  const voices = getVoices();
-  voices.forEach((voice, index) => {
-    console.log(`${index + 1}. ${voice.name} - ${voice.description}`);
-  });
-
-  // Get specific config value
-  console.log('\n=== Specific Value ===');
-  const defaultVoice = getConfigValue('google_tts', 'default_voice');
-  console.log('Default voice from getConfigValue:', defaultVoice);
-}
