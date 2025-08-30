@@ -19,7 +19,7 @@ contextBridge.exposeInMainWorld('api', {
      * Convert text to speech
      * Update conversion progress in the renderer process
      */
-    convertTextToSpeech: (text, voice, filePrefix) => ipcRenderer.invoke('convert-text-to-speech', text, voice, filePrefix),
+    convertTextToSpeech: (text, voice, filePrefix, settings) => ipcRenderer.invoke('convert-text-to-speech', text, voice, filePrefix, settings),
     onConversionProgress: (callback) => {
         ipcRenderer.on('tts-progress', (event, progress) => callback(progress))
         return () => ipcRenderer.removeListener('tts-progress', callback)
@@ -46,10 +46,19 @@ contextBridge.exposeInMainWorld('api', {
      * Get list of audio files
      */
     getAudioFilesList: () => ipcRenderer.invoke('get-audio-files-list'),
-    
 
     /**
-     * When using context isolation (which is a security best practice in Electron), 
+     * Save settings to YAML file
+     */
+    saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),
+
+    /**
+     * Load settings from YAML file
+     */
+    loadSettings: () => ipcRenderer.invoke('load-settings'),
+
+    /**
+     * When using context isolation (which is a security best practice in Electron),
      * the renderer process (your HTML/CSS/JS) doesn't have direct access to Node.js APIs or the file system.
      * They run in completely separate contexts.
      * If you tried to import directly in renderer.js with: import * as STATUS from './status.js'

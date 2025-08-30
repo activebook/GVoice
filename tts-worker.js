@@ -1,12 +1,10 @@
 const { GoogleGenAI } = require("@google/genai");
 const { ProxyAgent, setGlobalDispatcher } = require('undici');
-const { parentPort } = require('worker_threads');
 const path = require('path');
 const fs = require('fs');
 const wav = require('wav');
 const { generateFilename } = require('./utils.js');
 const { getDefaultSettings } = require('./config-reader.js');
-const STATUS = require('./status.js');
 
 // Conditionally set proxy based on environment variables
 const proxyUrl = process.env.HTTP_PROXY || process.env.HTTPS_PROXY;
@@ -39,87 +37,82 @@ async function saveWaveFile(
   });
 }
 
-async function generateSpeech(text, voice, dir, prefix) {
-    try {
-        const filename = generateFilename(prefix);
-        const outputPath = path.join(dir, filename);
+async function generateSpeech(text, voice, dir, prefix, settings = {}) {
+    const filename = generateFilename(prefix);
+    const outputPath = path.join(dir, filename);
 
-        // Get API key from config
-        const defaultSettings = getDefaultSettings();
-        const apiKey = defaultSettings?.apiKey;
+    // Get settings from parameters, fallback to config
+    const apiKey = settings.apiKey || getDefaultSettings()?.apiKey;
+    const ttsEngine = settings.ttsEngine || 'gemini-2.5-flash-preview-tts';
+    const speechStyle = settings.speechStyle || 'Generate this audio in a formal, clear, and objective news-reporting style';
 
-        if (!apiKey || apiKey === 'your_google_ai_api_key_here') {
-            throw new Error('Google AI API key not configured. Please set your API key in config.yaml');
-        }
+    if (!apiKey || apiKey === 'your_google_ai_api_key_here') {
+        throw new Error('Google AI API key not configured. Please set your API key in settings.');
+    }
 
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
-            contents: [{ parts: [{ text: `Generate this audio in a formal, clear, and objective news-reporting style: ${text}` }] }],
-            config: {
-                responseModalities: ['AUDIO'],
-                speechConfig: {
-                    voiceConfig: {
-                        prebuiltVoiceConfig: { voiceName: voice },
-                    },
+    const ai = new GoogleGenAI({ apiKey: apiKey });
+
+    // Prepare the text with speech style
+    const styledText = speechStyle ? `${speechStyle}: ${text}` : text;
+
+    console.log('Making API call with:', {
+        model: ttsEngine,
+        text: styledText.substring(0, 100) + '...', // Log first 100 chars
+        voice: voice
+    });
+
+    const response = await ai.models.generateContent({
+        model: ttsEngine,
+        contents: [{ parts: [{ text: styledText }] }],
+        config: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+                voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName: voice },
                 },
             },
-        });
+        },
+    });
 
-        const data = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (!data) {
-            throw new Error('No audio data received from Google AI');
-        }
+    console.log('API Response structure:', JSON.stringify(response, null, 2));
 
-        const audioBuffer = Buffer.from(data, 'base64');
-        await saveWaveFile(outputPath, audioBuffer);
+    // Try different possible response structures
+    let data = null;
 
-        console.log(`Generated speech saved to ${outputPath}`);
-
-        // Send result back to main thread
-        const progress = {
-            status: STATUS.TTS_SERVICE_STATUS_DONE,
-            message: outputPath
-        };
-        if (parentPort) parentPort.postMessage(progress);
-
-        return outputPath;
-    } catch (error) {
-        const progress = {
-            status: STATUS.TTS_SERVICE_STATUS_ERROR,
-            message: `Error generating speech: ${error.message}`
-        };
-        if (parentPort) parentPort.postMessage(progress);
-        console.error('TTS job failed:', progress.message);
+    // Try the expected structure first
+    if (response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
+        data = response.candidates[0].content.parts[0].inlineData.data;
     }
+    // Try alternative structures
+    else if (response.candidates?.[0]?.content?.parts?.[0]?.data) {
+        data = response.candidates[0].content.parts[0].data;
+    }
+    else if (response.candidates?.[0]?.inlineData?.data) {
+        data = response.candidates[0].inlineData.data;
+    }
+    else if (response.inlineData?.data) {
+        data = response.inlineData.data;
+    }
+
+    if (!data) {
+        console.error('Response candidates:', response.candidates);
+        console.error('Response content:', response.candidates?.[0]?.content);
+        console.error('Response parts:', response.candidates?.[0]?.content?.parts);
+        console.error('Full response:', response);
+        throw new Error('No audio data received from Google AI. Check API response structure.');
+    }
+
+    const audioBuffer = Buffer.from(data, 'base64');
+    await saveWaveFile(outputPath, audioBuffer);
+
+    console.log(`Generated speech saved to ${outputPath}`);
+
+    return outputPath;
 }
 
-parentPort.on('message', async (data) => {
-    let { text, voice, dir, prefix } = data;
+module.exports = { generateSpeech };
 
-    if (text.trim() === "") {
-        const progress = {
-            status: STATUS.TTS_SERVICE_STATUS_ERROR,
-            message: "No text provided to TTS"
-        };
-        parentPort.postMessage(progress);
-        return;
-    }
 
-    if (!voice || (voice && voice.trim() === "")) {
-        const defaultSettings = getDefaultSettings();
-        voice = defaultSettings?.defaultVoice || 'Kore';
-    }
-
-    if (!prefix || (prefix && prefix.trim() === "")) {
-        prefix = 'voice';
-    }
-
-    console.log('Received TTS request:', text);
-
-    // Don't need to await
-    generateSpeech(text, voice, dir, prefix);
-});
 
 
 /**
@@ -155,7 +148,10 @@ async function test() {
     // need to commend out the following line
     //import { ipcMain } from 'electron'
     const text = 'Hello, this is Kokoro TTS in Node.js.';
-    const filepath = await generateSpeech(text);
+    const voice = 'Kore';
+    const dir = './'; // or some temp dir
+    const prefix = 'test';
+    const filepath = await generateSpeech(text, voice, dir, prefix);
     await playAudio(filepath);
 }
 //test();

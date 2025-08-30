@@ -1,6 +1,7 @@
 const { app, BrowserWindow, nativeTheme, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs/promises');
+const yaml = require('js-yaml');
 const { setupTTSHandlers, teardownTTSHandlers } = require('./tts-service');
 const { setAppUserDataDir } = require('./utils');
 
@@ -73,3 +74,64 @@ ipcMain.handle('dark-mode:toggle', () => {
     }
     return nativeTheme.shouldUseDarkColors
 })
+
+/**
+ * Save settings to YAML file in user data directory
+ */
+ipcMain.handle('save-settings', async (event, settings) => {
+    try {
+        const userDataPath = app.getPath('userData');
+        const settingsPath = path.join(userDataPath, 'settings.yaml');
+
+        // Convert settings object to YAML string
+        const yamlStr = yaml.dump(settings);
+
+        // Write to file
+        await fs.writeFile(settingsPath, yamlStr, 'utf8');
+
+        return { success: true };
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        throw error;
+    }
+});
+
+/**
+ * Load settings from YAML file in user data directory
+ */
+ipcMain.handle('load-settings', async (event) => {
+    try {
+        const userDataPath = app.getPath('userData');
+        const settingsPath = path.join(userDataPath, 'settings.yaml');
+
+        // Check if file exists
+        try {
+            await fs.access(settingsPath);
+        } catch {
+            // File doesn't exist, return default settings
+            return {
+                apiKey: '',
+                speechStyle: '',
+                ttsEngine: 'gemini-2.5-flash-preview-tts'
+            };
+        }
+
+        // Read and parse YAML file
+        const yamlStr = await fs.readFile(settingsPath, 'utf8');
+        const settings = yaml.load(yamlStr);
+
+        return settings || {
+            apiKey: '',
+            speechStyle: '',
+            ttsEngine: 'gemini-2.5-flash-preview-tts'
+        };
+    } catch (error) {
+        console.error('Error loading settings:', error);
+        // Return default settings on error
+        return {
+            apiKey: '',
+            speechStyle: '',
+            ttsEngine: 'gemini-2.5-flash-preview-tts'
+        };
+    }
+});

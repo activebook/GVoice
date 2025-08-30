@@ -86,6 +86,14 @@
       <!-- Voice Selection (Right Corner) -->
       <div class="absolute top-0 right-0 z-10 p-2">
         <div class="flex items-center space-x-2">
+          <button id="settings-btn"
+            class="p-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white hover:bg-gray-50 transition-colors duration-200"
+            title="Settings" aria-label="Settings">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+          </button>
           <label for="voice-select"
             class="text-sm font-medium text-gray-700 transition-colors duration-200">Voice:</label>
           <select id="voice-select"
@@ -156,6 +164,64 @@
     </div>
 
 
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+    <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full mx-4">
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-xl font-semibold text-gray-900 dark:text-white">Settings</h2>
+          <button id="close-settings-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300" title="Close settings" aria-label="Close settings">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+
+        <form id="settings-form">
+          <div class="mb-4">
+            <label for="api-key" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Google API Key
+            </label>
+            <input type="password" id="api-key" name="apiKey"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter your Google API key">
+          </div>
+
+          <div class="mb-4">
+            <label for="speech-style" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Speech Style Prompt
+            </label>
+            <textarea id="speech-style" name="speechStyle" rows="3"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              placeholder="Enter speech style instructions (e.g., 'Speak in a calm, professional tone')"></textarea>
+          </div>
+
+          <div class="mb-6">
+            <label for="tts-engine" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              TTS Engine
+            </label>
+            <select id="tts-engine" name="ttsEngine"
+              class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
+              <option value="gemini-2.5-flash-preview-tts">Gemini 2.5 Flash Preview TTS (Default)</option>
+              <option value="gemini-2.5-pro-preview-tts">Gemini 2.5 Pro Preview TTS</option>
+            </select>
+          </div>
+
+          <div class="flex justify-end space-x-3">
+            <button type="button" id="cancel-settings"
+              class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-md hover:bg-gray-200 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-500">
+              Cancel
+            </button>
+            <button type="submit"
+              class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500">
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 
   <script src="renderer.js" type="module"></script>

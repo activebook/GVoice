@@ -24,6 +24,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const voiceListBtn = document.getElementById('voice-list-btn');
     const voiceSelect = document.getElementById('voice-select');
 
+    // Settings modal elements
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const closeSettingsModal = document.getElementById('close-settings-modal');
+    const cancelSettings = document.getElementById('cancel-settings');
+    const settingsForm = document.getElementById('settings-form');
+    const apiKeyInput = document.getElementById('api-key');
+    const speechStyleInput = document.getElementById('speech-style');
+    const ttsEngineSelect = document.getElementById('tts-engine');
+
     // Voice list dropdown elements
     const voiceListDropdown = document.getElementById('voice-list-dropdown');
     const voiceListContainer = document.getElementById('voice-list-container');
@@ -155,12 +165,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_START) {
             showStatus(STATUS.STATUS_TYPE_INFO, 'Starting conversion...');
-        } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_ERROR) {
-            showStatus(STATUS.STATUS_TYPE_ERROR, `Error: ${progress.message}`);
-        }
+    } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_ERROR) {
+        showStatus(STATUS.STATUS_TYPE_ERROR, `Error: ${progress.message}`);
+
+        // Reset button
+        convertBtn.disabled = false
+        convertBtn.textContent = 'Convert to Speech'
+    }
     })
 
-    /** 
+    /**
      * Convert text to speech click event
      */
     convertBtn.addEventListener('click', async () => {
@@ -172,6 +186,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const voice = voiceSelect.value;
         try {
+            // Load current settings
+            const settings = await window.api.loadSettings();
+
+            // Check if required settings are configured
+            if (!settings || !settings.apiKey || settings.apiKey.trim() === '' ||
+                !settings.ttsEngine || settings.ttsEngine.trim() === '') {
+                // Settings not configured, show settings modal
+                showStatus(STATUS.STATUS_TYPE_INFO, 'Please configure your API key and TTS engine in settings first.');
+                showSettingsModal();
+                return;
+            }
+
             // Show loading state
             convertBtn.disabled = true
             convertBtn.textContent = 'Converting...'
@@ -179,7 +205,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Use the exposed API method
             // No need await here, as the conversion is handled asynchronously(in subthread)
-            window.api.convertTextToSpeech(text, voice, gFilePrefix)
+            window.api.convertTextToSpeech(text, voice, gFilePrefix, settings)
 
         } catch (error) {
             console.error('TTS conversion error:', error)
@@ -410,4 +436,82 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('darkMode', 'false');
         }
     });
+
+    /**
+     * Settings modal functionality
+     */
+    // Function to show settings modal
+    function showSettingsModal() {
+        settingsModal.classList.remove('hidden');
+        loadSettings();
+    }
+
+    // Function to hide settings modal
+    function hideSettingsModal() {
+        settingsModal.classList.add('hidden');
+    }
+
+    // Function to load settings from file
+    async function loadSettings() {
+        try {
+            const settings = await window.api.loadSettings();
+            if (settings) {
+                apiKeyInput.value = settings.apiKey || '';
+                speechStyleInput.value = settings.speechStyle || '';
+                ttsEngineSelect.value = settings.ttsEngine || 'gemini-2.5-flash-preview-tts';
+            }
+        } catch (error) {
+            console.error('Error loading settings:', error);
+            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to load settings');
+        }
+    }
+
+    // Function to save settings to file
+    async function saveSettings(settings) {
+        try {
+            await window.api.saveSettings(settings);
+            showStatus(STATUS.STATUS_TYPE_SUCESS, 'Settings saved successfully!');
+        } catch (error) {
+            console.error('Error saving settings:', error);
+            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to save settings');
+        }
+    }
+
+    // Settings button click handler
+    settingsBtn.addEventListener('click', () => {
+        showSettingsModal();
+    });
+
+    // Close modal handlers
+    closeSettingsModal.addEventListener('click', () => {
+        hideSettingsModal();
+    });
+
+    cancelSettings.addEventListener('click', () => {
+        hideSettingsModal();
+    });
+
+    // Close modal when clicking outside
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            hideSettingsModal();
+        }
+    });
+
+    // Settings form submit handler
+    settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const settings = {
+            apiKey: apiKeyInput.value.trim(),
+            speechStyle: speechStyleInput.value.trim(),
+            ttsEngine: ttsEngineSelect.value
+        };
+
+        await saveSettings(settings);
+        hideSettingsModal();
+    });
+
+    // Load settings on app start
+    loadSettings();
 });

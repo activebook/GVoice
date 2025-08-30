@@ -3,28 +3,10 @@
  * TTS Service using Google GenAI
  */
 const { ipcMain, shell } = require('electron');
-const { Worker } = require('worker_threads');
 const { getVoices, getDefaultSettings } = require('./config-reader');
 const { getAppUserDataDir } = require('./utils');
-const path = require('path');
-
-// TTS worker instance, keep only one instance
-let ttsWorker = null;
-
-// Initialize the TTS worker once
-function initTTSWorker() {
-    if (!ttsWorker) {
-        const workerPath = path.join(__dirname, 'tts-worker.js');
-        ttsWorker = new Worker(workerPath);
-
-        // Log any errors
-        ttsWorker.on('error', (err) => {
-            console.error('TTS Worker error:', err);
-            ttsWorker = null; // Reset so we can try again
-        });
-    }
-    return ttsWorker;
-}
+const { generateSpeech } = require('./tts-worker');
+const STATUS = require('./status');
 
 async function loadVoices(sender) {
     return new Promise(async (resolve, reject) => {
@@ -46,41 +28,53 @@ async function loadVoices(sender) {
 }
 
 function setupTTSHandlers() {
-    ipcMain.handle('convert-text-to-speech', async (event, text, voice, filePrefix) => {
-
-        /**
-         * due to Node.js module scoping in worker threads! 
-         * Workers load their own separate instances of modules with separate memory spaces.
-         * So we must pass the appUserDataDir to the worker thread through main thread. 
-         */
+    ipcMain.handle('convert-text-to-speech', async (event, text, voice, filePrefix, settings) => {
         const appUserDataDir = getAppUserDataDir();
 
-        // Reuse the worker thread if it exists
-        const worker = initTTSWorker();
-
-        return new Promise((resolve, reject) => {
-            // Send text to worker to process
-            worker.postMessage({
-                text: text,
-                voice: voice,
-                dir: appUserDataDir,
-                prefix: filePrefix
-            });
-
-            // Handle worker response
-            const messageHandler = (progress) => {
-                // Check if sender is still valid before sending
-                if (!event.sender.isDestroyed()) {
-                    // Forward progress to renderer
-                    event.sender.send('tts-progress', progress);
-                }
-                // Remove the listener after handling the message
-                worker.removeListener('message', messageHandler);
-                resolve(progress.message);
+        if (text.trim() === "") {
+            const progress = {
+                status: STATUS.TTS_SERVICE_STATUS_ERROR,
+                message: "No text provided to TTS"
             };
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('tts-progress', progress);
+            }
+            throw new Error(progress.message);
+        }
 
-            worker.on('message', messageHandler);
-        });
+        if (!voice || (voice && voice.trim() === "")) {
+            const defaultSettings = getDefaultSettings();
+            voice = defaultSettings?.defaultVoice || 'Kore';
+        }
+
+        if (!filePrefix || (filePrefix && filePrefix.trim() === "")) {
+            filePrefix = 'voice';
+        }
+
+        console.log('Received TTS request:', text);
+
+        try {
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('tts-progress', { status: STATUS.TTS_SERVICE_STATUS_START, message: 'Starting TTS...' });
+            }
+
+            const outputPath = await generateSpeech(text, voice, appUserDataDir, filePrefix, settings);
+
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('tts-progress', { status: STATUS.TTS_SERVICE_STATUS_DONE, message: outputPath });
+            }
+
+            return outputPath;
+        } catch (error) {
+            const progress = {
+                status: STATUS.TTS_SERVICE_STATUS_ERROR,
+                message: `Error generating speech: ${error.message}`
+            };
+            if (!event.sender.isDestroyed()) {
+                event.sender.send('tts-progress', progress);
+            }
+            throw error;
+        }
     });
 
     // Add handler for fetching voices (optional if you have a static list)
@@ -132,10 +126,7 @@ function setupTTSHandlers() {
 }
 
 function teardownTTSHandlers() {
-    if (ttsWorker) {
-        ttsWorker.terminate();
-        ttsWorker = null;
-    }
+    // No worker to terminate
 }
 
 module.exports = {
