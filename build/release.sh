@@ -98,9 +98,10 @@ elif [ "$MODE" = "release" ]; then
   fi
 
   # Check if the tag already exists
+  TAG_EXISTS=false
   if git rev-parse "$VERSION" >/dev/null 2>&1; then
-    echo "Error: Git tag '$VERSION' already exists. Please update the version in 'package.json' before releasing."
-    exit 1
+    echo "Warning: Git tag '$VERSION' already exists. Skipping tag creation and push."
+    TAG_EXISTS=true
   fi
 
   # Generate changelog from commits since the last tag
@@ -146,12 +147,16 @@ elif [ "$MODE" = "release" ]; then
     echo "Built application found in dist/mac/. Skipping build."
   fi
 
-  # Create and push a new git tag
-  echo "Creating git tag $VERSION..."
-  git tag -a "$VERSION" -m "Release $VERSION" -m "$CHANGELOG"
+  # Create and push a new git tag if it doesn't exist
+  if [ "$TAG_EXISTS" = false ]; then
+    echo "Creating git tag $VERSION..."
+    git tag -a "$VERSION" -m "Release $VERSION" -m "$CHANGELOG"
 
-  echo "Pushing tag to origin..."
-  git push origin "$VERSION"
+    echo "Pushing tag to origin..."
+    git push origin "$VERSION"
+  else
+    echo "Skipping tag creation and push as tag already exists."
+  fi
 
   # Create GitHub release
   echo "Creating GitHub release..."
