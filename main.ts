@@ -14,7 +14,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 function createWindow() {
     const mainWindow = new BrowserWindow({
         width: 800,
-        height: 600,
+        height: 620,
         webPreferences: {
             preload: path.join(__dirname, 'preload.js'),
             contextIsolation: true, // recommended

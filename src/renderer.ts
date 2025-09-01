@@ -9,6 +9,7 @@ declare global {
       onVoicesRetrieved: (callback: (voices: any[], filePrefix: string) => void) => () => void;
       openFileLocation: (filePath?: string) => void;
       getAudioFilesList: () => Promise<any[]>;
+      clearAllAudioFiles: () => Promise<any>;
       saveSettings: (settings: any) => Promise<void>;
       loadSettings: () => Promise<any>;
       STATUS: {
@@ -51,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const openFileBtn = document.getElementById('open-file-btn') as HTMLButtonElement;
     const voiceListBtn = document.getElementById('voice-list-btn') as HTMLButtonElement;
     const voiceSelect = document.getElementById('voice-select') as HTMLSelectElement;
+    const clearBtn = document.getElementById('clear-btn') as HTMLButtonElement;
+    const pasteBtn = document.getElementById('paste-btn') as HTMLButtonElement;
 
     // Settings modal elements
     const settingsBtn = document.getElementById('settings-btn') as HTMLButtonElement;
@@ -68,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const voiceListLoading = document.getElementById('voice-list-loading') as HTMLDivElement;
     const voiceListEmpty = document.getElementById('voice-list-empty') as HTMLDivElement;
     const voiceListItems = document.getElementById('voice-list-items') as HTMLDivElement;
+    const clearAudioBtn = document.getElementById('clear-audio-btn') as HTMLButtonElement;
 
     // Status functionality
     function showStatus(type: string, message: string) {
@@ -254,6 +258,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     /**
+     * Clear button click event
+     */
+    clearBtn.addEventListener('click', () => {
+        textInput.value = '';
+        showStatus(STATUS.STATUS_TYPE_INFO, 'Text input cleared');
+    });
+
+    /**
+     * Paste button click event
+     */
+    pasteBtn.addEventListener('click', async () => {
+        try {
+            const clipboardText = await navigator.clipboard.readText();
+            textInput.value = clipboardText;
+            showStatus(STATUS.STATUS_TYPE_SUCESS, 'Text pasted from clipboard');
+        } catch (error) {
+            console.error('Failed to read clipboard:', error);
+            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to read clipboard. Please check permissions.');
+        }
+    });
+
+    /**
      * Open file location click event
      */
     openFileBtn.addEventListener('click', () => {
@@ -314,7 +340,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fileItem.className = 'voice-list-item';
                 fileItem.innerHTML = `
                     <div class="file-container" style="text-align: center; width: 100%; padding: 8px 16px; box-sizing: border-box;">
-                        <div class="file-name" title="${file.name}" style="text-align: center !important; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">
+                        <div class="file-name" title="${file.name}" style="text-align: center !important; display: block; word-wrap: break-word; white-space: normal; max-width: 100%;">
                             ${file.name}
                         </div>
                     </div>
@@ -356,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showVoiceListDropdown() {
         // Position above the voice list button
         const buttonRect = voiceListBtn.getBoundingClientRect();
-        const dropdownWidth = 400; // Smaller size
+        const dropdownWidth = 640; // Wider size for longer titles
         const dropdownHeight = 300; // Smaller height
 
         // Position above the button, centered horizontally
@@ -410,10 +436,38 @@ document.addEventListener('DOMContentLoaded', () => {
         hideVoiceListDropdown();
     }
 
+    // Function to clear all audio files
+    async function clearAllAudioFiles() {
+        const confirmed = confirm('Are you sure you want to clear all audio files? This action cannot be undone.');
+        if (!confirmed) return;
+
+        try {
+            showStatus(STATUS.STATUS_TYPE_LOADING, 'Clearing all audio files...');
+            const result = await window.api.clearAllAudioFiles();
+
+            if (result.success) {
+                showStatus(STATUS.STATUS_TYPE_SUCESS, `Successfully cleared ${result.deletedCount} audio files.`);
+                // Refresh the audio list
+                loadAudioFiles();
+            } else {
+                showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to clear audio files.');
+            }
+        } catch (error) {
+            console.error('Error clearing audio files:', error);
+            showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to clear audio files: ${error instanceof Error ? error.message : String(error)}`);
+        }
+    }
+
     // Voice list button click handler
     voiceListBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         toggleVoiceListDropdown();
+    });
+
+    // Clear audio button click handler
+    clearAudioBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        clearAllAudioFiles();
     });
 
     // Close dropdown when clicking outside
