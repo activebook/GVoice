@@ -338,7 +338,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fileItem.className = 'voice-list-item';
                 fileItem.innerHTML = `
                     <div class="file-container" style="text-align: center; width: 100%; padding: 8px 16px; box-sizing: border-box;">
-                        <div class="file-name" title="${file.name}" style="text-align: center !important; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%;">
+                        <div class="file-name" title="${file.name}" style="text-align: center !important; display: block; word-wrap: break-word; white-space: normal; max-width: 100%;">
                             ${file.name}
                         </div>
                     </div>
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showVoiceListDropdown() {
         // Position above the voice list button
         const buttonRect = voiceListBtn.getBoundingClientRect();
-        const dropdownWidth = 400; // Smaller size
+        const dropdownWidth = 640; // Wider size for longer titles
         const dropdownHeight = 300; // Smaller height
 
         // Position above the button, centered horizontally

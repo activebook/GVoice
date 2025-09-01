@@ -155,9 +155,8 @@ audio {
 
 .voice-list-item .file-name {
     @apply text-gray-800 text-base font-medium;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    word-wrap: break-word;
+    white-space: normal;
     max-width: 100%;
     display: block;
     line-height: 1.5;
