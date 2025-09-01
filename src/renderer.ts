@@ -51,6 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const openFileBtn = document.getElementById('open-file-btn') as HTMLButtonElement;
     const voiceListBtn = document.getElementById('voice-list-btn') as HTMLButtonElement;
     const voiceSelect = document.getElementById('voice-select') as HTMLSelectElement;
+    const clearBtn = document.getElementById('clear-btn') as HTMLButtonElement;
+    const pasteBtn = document.getElementById('paste-btn') as HTMLButtonElement;
 
     // Settings modal elements
     const settingsBtn = document.getElementById('settings-btn') as HTMLButtonElement;
@@ -250,6 +252,28 @@ document.addEventListener('DOMContentLoaded', () => {
             // Reset button
             convertBtn.disabled = false
             convertBtn.textContent = 'Convert to Speech'
+        }
+    });
+
+    /**
+     * Clear button click event
+     */
+    clearBtn.addEventListener('click', () => {
+        textInput.value = '';
+        showStatus(STATUS.STATUS_TYPE_INFO, 'Text input cleared');
+    });
+
+    /**
+     * Paste button click event
+     */
+    pasteBtn.addEventListener('click', async () => {
+        try {
+            const clipboardText = await navigator.clipboard.readText();
+            textInput.value = clipboardText;
+            showStatus(STATUS.STATUS_TYPE_SUCESS, 'Text pasted from clipboard');
+        } catch (error) {
+            console.error('Failed to read clipboard:', error);
+            showStatus(STATUS.STATUS_TYPE_ERROR, 'Failed to read clipboard. Please check permissions.');
         }
     });
 

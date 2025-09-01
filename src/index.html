@@ -53,63 +53,76 @@
       <p class="text-sm text-gray-600 mt-1 transition-colors duration-200">Google AI TTS Engine</p>
     </div>
 
-    <!-- Dark/Light Mode Switch Container -->
-    <div class="w-full mb-6 relative">
-      <!-- Dark/Light Mode Switch (Left Corner) -->
-      <div class="absolute top-0 left-0 z-10 p-2">
-        <div class="flex items-center space-x-2">
-          <label for="theme-toggle"
-            class="text-sm font-medium text-gray-700 transition-colors duration-200">Theme:</label>
-          <button id="theme-toggle"
-            class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-200">
-            <span class="sr-only">Toggle dark mode</span>
-            <!-- Toggle Slider -->
-            <span id="toggle-slider"
-              class="inline-block w-5 h-5 transform bg-white rounded-full transition-transform duration-200 ease-in-out translate-x-1"
-              aria-hidden="true"></span>
-            <!-- Dark Mode Icon (Moon) -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-1 h-3.5 w-3.5 text-gray-400"
-              viewBox="0 0 20 20" fill="currentColor">
-              <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-            </svg>
-            <!-- Light Mode Icon (Sun) -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-1 h-3.5 w-3.5 text-yellow-400"
-              viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd"
-                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
-                clip-rule="evenodd" />
-            </svg>
-          </button>
-        </div>
+    <!-- Controls Row -->
+    <div class="w-full mb-4 flex justify-between items-center">
+      <!-- Dark/Light Mode Switch (Left) -->
+      <div class="flex items-center space-x-2">
+        <label for="theme-toggle"
+          class="text-sm font-medium text-gray-700 transition-colors duration-200">Theme:</label>
+        <button id="theme-toggle"
+          class="relative inline-flex items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 bg-gray-200">
+          <span class="sr-only">Toggle dark mode</span>
+          <!-- Toggle Slider -->
+          <span id="toggle-slider"
+            class="inline-block w-5 h-5 transform bg-white rounded-full transition-transform duration-200 ease-in-out translate-x-1"
+            aria-hidden="true"></span>
+          <!-- Dark Mode Icon (Moon) -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute right-1 h-3.5 w-3.5 text-gray-400"
+            viewBox="0 0 20 20" fill="currentColor">
+            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+          </svg>
+          <!-- Light Mode Icon (Sun) -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="absolute left-1 h-3.5 w-3.5 text-yellow-400"
+            viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd"
+              d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+              clip-rule="evenodd" />
+          </svg>
+        </button>
       </div>
 
-      <!-- Voice Selection (Right Corner) -->
-      <div class="absolute top-0 right-0 z-10 p-2">
-        <div class="flex items-center space-x-2">
-          <button id="settings-btn"
-            class="p-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white hover:bg-gray-50 transition-colors duration-200"
-            title="Settings" aria-label="Settings">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          </button>
-          <label for="voice-select"
-            class="text-sm font-medium text-gray-700 transition-colors duration-200">Voice:</label>
-          <select id="voice-select"
-            class="p-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white transition-colors duration-200">
-            <option value="Kore">Kore (Default)</option>
-            <option value="Zephyr">Zephyr</option>
-            <option value="Puck">Puck</option>
-            <option value="Charon">Charon</option>
-            <option value="Fenrir">Fenrir</option>
-            <!-- More voices will be loaded dynamically -->
-          </select>
-        </div>
+      <!-- Voice Selection (Right) -->
+      <div class="flex items-center space-x-2">
+        <button id="clear-btn"
+          class="p-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white hover:bg-gray-50 transition-colors duration-200"
+          title="Clear Text" aria-label="Clear Text">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+          </svg>
+        </button>
+        <button id="paste-btn"
+          class="p-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white hover:bg-gray-50 transition-colors duration-200"
+          title="Paste from Clipboard" aria-label="Paste from Clipboard">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        </button>
+        <button id="settings-btn"
+          class="p-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white hover:bg-gray-50 transition-colors duration-200"
+          title="Settings" aria-label="Settings">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </button>
+        <label for="voice-select"
+          class="text-sm font-medium text-gray-700 transition-colors duration-200">Voice:</label>
+        <select id="voice-select"
+          class="p-1.5 text-sm border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white transition-colors duration-200">
+          <option value="Kore">Kore (Default)</option>
+          <option value="Zephyr">Zephyr</option>
+          <option value="Puck">Puck</option>
+          <option value="Charon">Charon</option>
+          <option value="Fenrir">Fenrir</option>
+          <!-- More voices will be loaded dynamically -->
+        </select>
       </div>
-      <!-- Text Input -->
+    </div>
+
+    <!-- Text Input -->
+    <div class="w-full mb-6">
       <textarea id="text-input"
-        class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent pt-12 transition-colors duration-200"
+        class="w-full p-3 border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-red-500 focus:border-transparent transition-colors duration-200"
         rows="5" placeholder="Enter text to convert to speech..."></textarea>
     </div>
 
