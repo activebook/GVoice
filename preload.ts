@@ -45,6 +45,11 @@ contextBridge.exposeInMainWorld('api', {
     getAudioFilesList: () => ipcRenderer.invoke('get-audio-files-list'),
 
     /**
+     * Clear all audio files
+     */
+    clearAllAudioFiles: () => ipcRenderer.invoke('clear-all-audio-files'),
+
+    /**
      * Save settings to YAML file
      */
     saveSettings: (settings) => ipcRenderer.invoke('save-settings', settings),

@@ -133,6 +133,29 @@ function setupTTSHandlers() {
             return [];
         }
     });
+
+    // Add handler for clearing all audio files
+    ipcMain.handle('clear-all-audio-files', async () => {
+        try {
+            const appUserDataDir = getAppUserDataDir();
+            const files = await fs.readdir(appUserDataDir);
+
+            // Delete all .wav files
+            const deletePromises = files
+                .filter(file => file.endsWith('.wav'))
+                .map(file => {
+                    const filePath = pathJoin(appUserDataDir, file);
+                    return fs.unlink(filePath);
+                });
+
+            await Promise.all(deletePromises);
+
+            return { success: true, deletedCount: deletePromises.length };
+        } catch (error) {
+            console.error('Error clearing audio files:', error instanceof Error ? error.message : String(error));
+            throw error;
+        }
+    });
 }
 
 function teardownTTSHandlers() {
