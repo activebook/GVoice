@@ -9,11 +9,12 @@ GVoice is a lightweight, desktop Text-to-Speech (TTS) application powered by Goo
 - **Dark/Light Mode**: Toggle between themes for comfortable usage in any environment
 - **Customizable Speech Styles**: Add custom prompts to control the speaking style and tone
 - **AI-Powered Filename Generation**: Automatically generates descriptive filenames using AI based on content
-- **Audio File Management**: Automatically saves generated audio files and provides easy access
-- **Voice List**: Browse and replay previously generated audio files
-- **Settings Management**: Configure API keys, TTS engines, and preferences
-- **Cross-Platform**: Built with Electron for Windows, macOS, and Linux
-- **No Token Limits**: Direct API integration without subscription restrictions
+- **Audio File Management**: Automatically saves generated audio files and  replay on selection
+- **Settings Management**: Configure API keys, TTS engines, and preferences with persistent storage
+- **Clipboard Integration**: Paste text directly from clipboard for quick input
+- **Proxy Support**: Automatic detection and configuration of system proxies (HTTP, HTTPS, SOCKS)
+- **Clear Audio Files**: Bulk delete all generated audio files with confirmation
+- **Default Voice Memory**: Remembers your preferred voice selection across sessions
 
 ## Screenshots
 
@@ -26,8 +27,8 @@ GVoice is a lightweight, desktop Text-to-Speech (TTS) application powered by Goo
 ### Settings
 ![Settings Screenshot](screenshots/settings.jpg)
 
-### Voice List
-![Voice List Screenshot](screenshots/voicelist.jpg)
+### Audio List
+![Audio List Screenshot](screenshots/list.jpg)
 
 ## Installation
 
@@ -85,45 +86,15 @@ GVoice is a lightweight, desktop Text-to-Speech (TTS) application powered by Goo
 4. **Theme Toggle**:
    - Use the theme switch in the top-left to toggle between light and dark modes
 
-## Configuration
+### Proxy Support
+GVoice automatically detects and configures system proxy settings for:
+- **HTTP Proxy**: Standard web proxy configuration
+- **HTTPS Proxy**: Secure web proxy configuration
+- **SOCKS Proxy**: SOCKS4/SOCKS5 proxy support
 
-### Settings
-- **Google API Key**: Required for TTS functionality
-- **Speech Style Prompt**: Custom instructions for voice style (e.g., "Speak in a calm, professional tone")
-- **TTS Engine**: Choose between Gemini 2.5 Flash (faster) or Pro (higher quality) models
-- **Default Voice**: Set your preferred default voice
-
-### Available Voices
-- Zephyr (Bright)
-- Puck (Upbeat)
-- Charon (Informative)
-- Kore (Firm) - Default
-- Fenrir (Excitable)
-- Leda (Youthful)
-- Orus (Firm)
-- Aoede (Breezy)
-- Callirrhoe (Easy-going)
-- Autonoe (Bright)
-- Enceladus (Breathy)
-- Iapetus (Clear)
-- Umbriel (Easy-going)
-- Algieba (Smooth)
-- Despina (Smooth)
-- Erinome (Clear)
-- Algenib (Gravelly)
-- Rasalgethi (Informative)
-- Laomedeia (Upbeat)
-- Achernar (Soft)
-- Alnilam (Firm)
-- Schedar (Even)
-- Gacrux (Mature)
-- Pulcherrima (Forward)
-- Achird (Friendly)
-- Zubenelgenubi (Casual)
-- Vindemiatrix (Gentle)
-- Sadachbia (Lively)
-- Sadaltager (Knowledgeable)
-- Sulafat (Warm)
+Proxy settings are detected from:
+- Environment variables (`HTTP_PROXY`, `HTTPS_PROXY`)
+- System proxy configuration (Windows Registry, macOS scutil, Linux gsettings)
 
 ## Filename Generation
 
@@ -162,14 +133,20 @@ GVoice/
 - `npm run package` - Package the app for distribution
 - `npm run make` - Create distributable packages
 
-## API Integration
+### Release Process
+GVoice includes an automated release system (`build/release.sh`)
 
-GVoice uses Google's Gemini AI models for TTS:
-- **gemini-2.5-flash-preview-tts**: Faster generation, good quality
-- **gemini-2.5-pro-preview-tts**: Higher quality, slightly slower
+Usage:
+```bash
+# Dry run (simulate release)
+./build/release.sh --dryrun
 
-The app supports proxy configuration via environment variables:
-- `HTTP_PROXY` or `HTTPS_PROXY`
+# Build only
+./build/release.sh --build
+
+# Full release
+./build/release.sh --release
+```
 
 ## Author
 
