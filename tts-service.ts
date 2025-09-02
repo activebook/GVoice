@@ -11,22 +11,16 @@ import { generateSpeech } from './tts-worker.js';
 import { TTS_SERVICE_STATUS_START, TTS_SERVICE_STATUS_DONE, TTS_SERVICE_STATUS_ERROR } from './status.js';
 
 async function loadVoices(sender) {
-    return new Promise(async (resolve, reject) => {
-        const voices = getVoices().map(voice => ({
-            id: voice.name,
-            name: voice.name,
-            description: voice.description
-        }));
-        //console.log(voices);
-        const defaultSettings = getDefaultSettings();
-        const prefix = defaultSettings?.defaultVoice || 'voice';
+    const voices = getVoices().map(voice => ({
+        id: voice.name,
+        name: voice.name,
+        description: voice.description
+    }));
+    //console.log(voices);
+    const defaultSettings = getDefaultSettings();
+    const filePrefix = defaultSettings?.defaultVoice || 'voice';
 
-        // Check if sender is still valid before sending
-        if (!sender.isDestroyed()) {
-            sender.send('available-voices-retrieved', voices, prefix);
-        }
-        resolve(voices);
-    });
+    return { voices, filePrefix };
 }
 
 function setupTTSHandlers() {

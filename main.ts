@@ -99,10 +99,14 @@ ipcMain.handle('save-settings', async (event, settings) => {
         // Write to file
         await fs.writeFile(settingsPath, yamlStr, 'utf8');
 
-        return { success: true };
+        return { success: true, message: 'Settings saved successfully' };
     } catch (error) {
         console.error('Error saving settings:', error);
-        throw error;
+        return {
+            success: false,
+            message: `Failed to save settings: ${error instanceof Error ? error.message : String(error)}`,
+            error: error instanceof Error ? error.message : String(error)
+        };
     }
 });
 

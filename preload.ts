@@ -24,14 +24,10 @@ contextBridge.exposeInMainWorld('api', {
 
     /**
      * Get available voices
-     * Update voices in the renderer process
+     * Returns a Promise that resolves to available voices
      */
-    getAvailableVoices: () => 
+    getAvailableVoices: () =>
         ipcRenderer.invoke('get-available-voices'),
-    onVoicesRetrieved: (callback) => {
-        ipcRenderer.on('available-voices-retrieved', (event, voices, filePrefix) => callback(voices, filePrefix))
-        return () => ipcRenderer.removeListener('available-voices-retrieved', callback)
-    },
 
     
     /**
