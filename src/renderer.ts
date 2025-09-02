@@ -5,12 +5,11 @@ declare global {
     api: {
       convertTextToSpeech: (text: string, voice: string, filePrefix: string, settings: any) => Promise<void>;
       onConversionProgress: (callback: (progress: any) => void) => () => void;
-      getAvailableVoices: () => Promise<void>;
-      onVoicesRetrieved: (callback: (voices: any[], filePrefix: string) => void) => () => void;
+      getAvailableVoices: () => Promise<{voices: any[], filePrefix: string}>;
       openFileLocation: (filePath?: string) => void;
       getAudioFilesList: () => Promise<any[]>;
       clearAllAudioFiles: () => Promise<any>;
-      saveSettings: (settings: any) => Promise<void>;
+      saveSettings: (settings: any) => Promise<{success: boolean, message: string, error?: string}>;
       loadSettings: () => Promise<any>;
       STATUS: {
         TTS_SERVICE_STATUS_START: number;
@@ -153,7 +152,25 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load available voices dynamically (optional)
     async function loadVoices() {
         try {
-            (window as any).api.getAvailableVoices();
+            const result = await window.api.getAvailableVoices();
+            const { voices, filePrefix } = result;
+
+            gFilePrefix = filePrefix;
+            // Clear existing options
+            voiceSelect.innerHTML = '';
+
+            // Add each voice as an option with name and description
+            voices.forEach((voice: any) => {
+                const option = document.createElement('option');
+                option.value = voice.id;
+                option.textContent = `${voice.name} (${voice.description})`;
+                voiceSelect.appendChild(option);
+            });
+
+            // Load default voice from settings and set it as selected
+            loadDefaultVoice();
+
+            showStatus(STATUS.STATUS_TYPE_INFO, 'Click "Convert to Speech" to begin conversion.');
         } catch (error) {
             showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to load voices. Please try again. ${error instanceof Error ? error.message : String(error)}`);
         }
@@ -162,24 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load voices and update the select element
     let gFilePrefix = '';
     loadVoices();
-    window.api.onVoicesRetrieved((voices, filePrefix) => {
-        gFilePrefix = filePrefix;
-        // Clear existing options
-        voiceSelect.innerHTML = '';
-
-        // Add each voice as an option with name and description
-        voices.forEach(voice => {
-            const option = document.createElement('option');
-            option.value = voice.id;
-            option.textContent = `${voice.name} (${voice.description})`;
-            voiceSelect.appendChild(option);
-        });
-
-        // Load default voice from settings and set it as selected
-        loadDefaultVoice();
-
-        showStatus(STATUS.STATUS_TYPE_INFO, 'Click "Convert to Speech" to begin conversion.');
-    });
 
     // Listen for conversion progress updates
     const cleanup = window.api.onConversionProgress((progress) => {
@@ -557,8 +556,12 @@ document.addEventListener('DOMContentLoaded', () => {
     // Function to save settings to file
     async function saveSettings(settings) {
         try {
-            await window.api.saveSettings(settings);
-            showStatus(STATUS.STATUS_TYPE_SUCESS, 'Settings saved successfully!');
+            const result = await window.api.saveSettings(settings);
+            if (result.success) {
+                showStatus(STATUS.STATUS_TYPE_SUCESS, result.message || 'Settings saved successfully!');
+            } else {
+                showStatus(STATUS.STATUS_TYPE_ERROR, result.message || 'Failed to save settings');
+            }
         } catch (error) {
             console.error('Error saving settings:', error);
             showStatus(STATUS.STATUS_TYPE_ERROR, `Failed to save settings: ${error instanceof Error ? error.message : String(error)}`);
