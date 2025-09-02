@@ -202,13 +202,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_START) {
             showStatus(STATUS.STATUS_TYPE_INFO, 'Starting conversion...');
-    } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_ERROR) {
-        showStatus(STATUS.STATUS_TYPE_ERROR, `Error: ${progress.message}`);
+        } else if (progress.status === window.api.STATUS.TTS_SERVICE_STATUS_ERROR) {
+            showStatus(STATUS.STATUS_TYPE_ERROR, `Error: ${progress.message}`);
 
-        // Reset button
-        convertBtn.disabled = false
-        convertBtn.textContent = 'Convert to Speech'
-    }
+            // Reset button
+            convertBtn.disabled = false
+            convertBtn.textContent = 'Convert to Speech'
+        }
     })
 
     /**
